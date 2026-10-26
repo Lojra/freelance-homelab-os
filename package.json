@@ -1,0 +1,22 @@
+{
+  "name": "freelance-homelab-os",
+  "version": "1.0.0",
+  "description": "Repurpose an old Android phone into a 24/7 Homelab & Hardware Freelance Command Center",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "homelab",
+    "proxmox",
+    "android",
+    "termux",
+    "freelancer",
+    "kicad",
+    "esp32",
+    "pihole",
+    "pwa"
+  ],
+  "author": "Open Source Community",
+  "license": "MIT"
+}

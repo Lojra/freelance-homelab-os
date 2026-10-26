@@ -1,0 +1,2425 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>j5-freelance-node // Proxmox Homelab Command Center</title>
+
+  <!-- PWA & Apple Web App Meta -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0B0D10">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Homelab OS">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
+  
+  <!-- Fonts: Space Grotesk (Headings) + Inter (Body) + JetBrains Mono (Data/Prices/Logs) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['"Space Grotesk"', 'sans-serif'],
+            sans: ['"Inter"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            obsidian: '#0B0D10',
+            surface: '#15181E',
+            surfaceHover: '#1B1F27',
+            surfaceActive: '#222731',
+            borderSubtle: 'rgba(255, 255, 255, 0.07)',
+            borderFocus: 'rgba(16, 185, 129, 0.4)',
+            nodeEmerald: '#10B981',
+            nodeAmber: '#F59E0B',
+            nodeViolet: '#A855F7',
+            nodeCyan: '#06B6D4',
+            nodeRose: '#F43F5E',
+          },
+          boxShadow: {
+            nodeCard: '0 4px 20px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
+            glowEmerald: '0 0 25px -5px rgba(16, 185, 129, 0.25)',
+            glowAmber: '0 0 25px -5px rgba(245, 158, 11, 0.25)',
+            glowViolet: '0 0 25px -5px rgba(168, 85, 247, 0.25)',
+            deckTop: '0 16px 32px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.1)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Proxmox / Homelab Ambient Styles */
+    body {
+      background-color: #0B0D10;
+      background-image: 
+        radial-gradient(ellipse 80% 50% at 20% -20%, rgba(16, 185, 129, 0.18), transparent 70%),
+        radial-gradient(circle at 85% 15%, rgba(6, 182, 212, 0.08), transparent 50%),
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      color: #F8FAFC;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0B0D10;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #272C38;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3B4252;
+    }
+
+    /* 3D Stack Deck Transforms */
+    .deck-container {
+      perspective: 1200px;
+      position: relative;
+      min-height: 480px;
+    }
+
+    .swipe-card {
+      touch-action: pan-y;
+      user-select: none;
+      transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease, box-shadow 0.25s ease;
+      will-change: transform, opacity;
+    }
+
+    .swipe-card.dragging {
+      transition: none;
+      cursor: grabbing !important;
+    }
+
+    .swipe-card.swiped-left {
+      transform: translate3d(-140%, 30px, 0) rotate(-22deg) !important;
+      opacity: 0 !important;
+    }
+
+    .swipe-card.swiped-right {
+      transform: translate3d(140%, 30px, 0) rotate(22deg) !important;
+      opacity: 0 !important;
+    }
+
+    /* Circular SVG Gauge Transition */
+    .gauge-circle {
+      transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Pulse dot */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.4); opacity: 0; }
+      100% { transform: scale(0.9); opacity: 0; }
+    }
+    .pulse-ring {
+      animation: pulse-ring 2s infinite ease-out;
+    }
+
+    /* Terminal syntax highlights */
+    .log-info { color: #38BDF8; }
+    .log-success { color: #34D399; font-weight: 600; }
+    .log-warn { color: #FBBF24; }
+    .log-error { color: #F87171; font-weight: 600; }
+    .log-time { color: #64748B; }
+    .log-purple { color: #C084FC; }
+    /* Keypad Shake Animation */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .animate-shake {
+      animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+    .safe-area-bottom {
+      padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    }
+  </style>
+</head>
+<body class="font-sans antialiased selection:bg-emerald-500/30 selection:text-emerald-300">
+
+  <!-- FULL SCREEN HOMELAB PIN LOCK SCREEN OVERLAY -->
+  <div id="pinLockModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-[#0B0D10]/95 backdrop-blur-2xl p-4 transition-all duration-300">
+    <div id="pinCard" class="w-full max-w-sm bg-[#15181E] border border-emerald-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
+      <div class="absolute -top-24 -left-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <div class="text-center space-y-2">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 mb-1 shadow-glowEmerald">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="2"/>
+            <path d="M7 11V7a5 5 0 0110 0v4" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-semibold">PROXMOX // NODE SECURITY</div>
+        <h3 class="text-xl font-heading font-bold text-white tracking-wide">Enter Node Access PIN</h3>
+        <p class="text-xs text-slate-400 font-sans">Authorized operator credentials required to unmask hardware state</p>
+      </div>
+
+      <!-- PIN Mask Display -->
+      <div class="flex justify-center items-center space-x-3 py-2">
+        <div id="dot-0" class="w-3.5 h-3.5 rounded-full border border-slate-600 bg-transparent transition-all"></div>
+        <div id="dot-1" class="w-3.5 h-3.5 rounded-full border border-slate-600 bg-transparent transition-all"></div>
+        <div id="dot-2" class="w-3.5 h-3.5 rounded-full border border-slate-600 bg-transparent transition-all"></div>
+        <div id="dot-3" class="w-3.5 h-3.5 rounded-full border border-slate-600 bg-transparent transition-all"></div>
+      </div>
+
+      <div id="pinErrorMsg" class="hidden text-center text-xs font-mono text-rose-400 font-semibold">INVALID NODE ACCESS PIN</div>
+
+      <!-- Keypad (Numbers 1-9, CLR, 0, OK) -->
+      <div class="grid grid-cols-3 gap-2.5 font-mono">
+        <button type="button" onclick="pinInputDigit('1')" class="h-12 rounded-xl bg-[#1A1E26] hover:bg-surfaceActive text-white text-lg font-bold border border-borderSubtle active:scale-95 transition-all">1</button>
+        <button type="button" onclick="pinInputDigit('2')" class="h-12 rounded-xl bg-[#1A1E26] hover:bg-surfaceActive text-white text-lg font-bold border border-borderSubtle active:scale-95 transition-all">2</button>
+        <button type="button" onclick="pinInputDigit('3')" class="h-12 rounded-xl bg-[#1A1E26] hover:bg-surfaceActive text-white text-lg font-bold border border-borderSubtle active:scale-95 transition-all">3</button>
+        <button type="button" onclick="pinInputDigit('4')" class="h-12 rounded-xl bg-[#1A1E26] hover:bg-surfaceActive text-white text-lg font-bold border border-borderSubtle active:scale-95 transition-all">4</button>
+        <button type="button" onclick="pinInputDigit('5')" class="h-12 rounded-xl bg-[#1A1E26] hover:bg-surfaceActive text-white text-lg font-bold border border-borderSubtle active:scale-95 transition-all">5</button>
+        <button type="button" onclick="pinInputDigit('6')" class="h-12 rounded-xl bg-[#1A1E26] hover:bg-surfaceActive text-white text-lg font-bold border border-borderSubtle active:scale-95 transition-all">6</button>
+        <button type="button" onclick="pinInputDigit('7')" class="h-12 rounded-xl bg-[#1A1E26] hover:bg-surfaceActive text-white text-lg font-bold border border-borderSubtle active:scale-95 transition-all">7</button>
+        <button type="button" onclick="pinInputDigit('8')" class="h-12 rounded-xl bg-[#1A1E26] hover:bg-surfaceActive text-white text-lg font-bold border border-borderSubtle active:scale-95 transition-all">8</button>
+        <button type="button" onclick="pinInputDigit('9')" class="h-12 rounded-xl bg-[#1A1E26] hover:bg-surfaceActive text-white text-lg font-bold border border-borderSubtle active:scale-95 transition-all">9</button>
+        <button type="button" onclick="pinClear()" class="h-12 rounded-xl bg-[#1A1E26] hover:bg-rose-950/40 text-slate-300 hover:text-rose-300 text-xs font-semibold border border-borderSubtle active:scale-95 transition-all">CLR</button>
+        <button type="button" onclick="pinInputDigit('0')" class="h-12 rounded-xl bg-[#1A1E26] hover:bg-surfaceActive text-white text-lg font-bold border border-borderSubtle active:scale-95 transition-all">0</button>
+        <button type="button" onclick="submitPin()" class="h-12 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-glowEmerald active:scale-95 transition-all">OK</button>
+      </div>
+
+      <div class="text-center text-[11px] font-mono text-slate-500">
+        Default Node PIN: <span class="text-slate-400">1337</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Top Bar -->
+  <div class="lg:hidden flex items-center justify-between px-4 py-3 bg-[#12151B] border-b border-borderSubtle">
+    <div class="flex items-center space-x-2">
+      <div class="w-2.5 h-2.5 rounded-full bg-nodeEmerald shadow-glowEmerald"></div>
+      <span class="font-heading font-semibold text-white tracking-wide text-sm">j5-freelance-node</span>
+    </div>
+    <div class="flex items-center space-x-2">
+      <button onclick="lockDashboard()" title="Lock Session" class="p-2 rounded-lg bg-surface text-slate-300 hover:text-amber-400 border border-borderSubtle">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="2"/>
+          <path d="M7 11V7a5 5 0 0110 0v4" stroke-width="2"/>
+        </svg>
+      </button>
+      <button id="mobileMenuBtn" class="p-2 rounded-lg bg-surface text-slate-300 hover:text-white border border-borderSubtle">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="flex min-h-screen">
+    
+    <!-- LEFT SIDEBAR: Homelab Node Tree & Services -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-[#101318]/95 backdrop-blur-xl border-r border-borderSubtle flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0 lg:static">
+      
+      <!-- Cluster / Node Header -->
+      <div class="p-5 border-b border-borderSubtle">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center space-x-2.5">
+            <div class="relative flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-950/60 border border-emerald-500/30 text-emerald-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <rect x="2" y="2" width="20" height="8" rx="2" stroke-width="2"/>
+                <rect x="2" y="14" width="20" height="8" rx="2" stroke-width="2"/>
+                <line x1="6" y1="6" x2="6.01" y2="6" stroke-width="2" stroke-linecap="round"/>
+                <line x1="6" y1="18" x2="6.01" y2="18" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <span class="text-xs uppercase tracking-wider text-slate-400 font-mono">Cluster Node</span>
+              <h1 class="text-sm font-heading font-bold text-white tracking-wide">j5-freelance-node</h1>
+            </div>
+          </div>
+          <div class="flex items-center space-x-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-mono">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span>Online</span>
+          </div>
+        </div>
+        <div class="text-[11px] text-slate-400 font-mono flex items-center space-x-2">
+          <span>SM-J530F</span>
+          <span>•</span>
+          <span>ARMv7 (4 Cores)</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tree -->
+      <div class="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
+        <div>
+          <div class="px-3 mb-2 text-[10px] font-mono uppercase tracking-wider text-slate-500">Node Views</div>
+          <nav class="space-y-1">
+            <button onclick="switchView('overview')" id="nav-overview" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors bg-surface text-white border border-borderSubtle shadow-sm">
+              <div class="flex items-center space-x-2.5">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="7" height="7" rx="1.5" stroke-width="2"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1.5" stroke-width="2"/>
+                  <rect x="14" y="14" width="7" height="7" rx="1.5" stroke-width="2"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.5" stroke-width="2"/>
+                </svg>
+                <span>Overview & Deck</span>
+              </div>
+              <span id="badge-pending" class="px-1.5 py-0.5 text-[11px] font-mono rounded-md bg-emerald-500/20 text-emerald-300 font-semibold">0</span>
+            </button>
+
+            <button onclick="switchView('queue')" id="nav-queue" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 hover:bg-surface/50">
+              <div class="flex items-center space-x-2.5">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+                <span>Freelancer Queue</span>
+              </div>
+              <span id="badge-total-jobs" class="px-1.5 py-0.5 text-[11px] font-mono rounded-md bg-amber-500/10 text-amber-300">0</span>
+            </button>
+
+            <button onclick="switchView('fiverr')" id="nav-fiverr" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 hover:bg-surface/50">
+              <div class="flex items-center space-x-2.5">
+                <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                </svg>
+                <span>Fiverr Live Inbox</span>
+              </div>
+              <span id="badge-fiverr" class="px-1.5 py-0.5 text-[11px] font-mono rounded-md bg-violet-500/20 text-violet-300 font-semibold">0</span>
+            </button>
+
+            <button onclick="switchView('history')" id="nav-history" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 hover:bg-surface/50">
+              <div class="flex items-center space-x-2.5">
+                <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>Scout History</span>
+              </div>
+              <span id="badge-history" class="px-1.5 py-0.5 text-[11px] font-mono rounded-md bg-slate-800 text-slate-400">0</span>
+            </button>
+
+            <button onclick="switchView('terminal')" id="nav-terminal" class="nav-item w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors text-slate-400 hover:text-slate-200 hover:bg-surface/50">
+              <div class="flex items-center space-x-2.5">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+                <span>Live Terminal</span>
+              </div>
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Node Daemons & Services -->
+        <div>
+          <div class="px-3 mb-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-500">
+            <span>Node Services</span>
+            <span class="text-emerald-400 font-medium">6/6 Active</span>
+          </div>
+          <div class="space-y-1.5 text-xs font-mono">
+            <div class="flex items-center justify-between px-3 py-1.5 rounded-lg bg-surface/40 border border-borderSubtle/60">
+              <div class="flex items-center space-x-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-glowEmerald"></span>
+                <span class="text-slate-300">job-scout-cron</span>
+              </div>
+              <span class="text-[10px] text-slate-500">15m</span>
+            </div>
+            <div class="flex items-center justify-between px-3 py-1.5 rounded-lg bg-surface/40 border border-borderSubtle/60">
+              <div class="flex items-center space-x-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-glowEmerald"></span>
+                <span class="text-slate-300">fiverr-imap</span>
+              </div>
+              <span class="text-[10px] text-slate-500">idle</span>
+            </div>
+            <div class="flex items-center justify-between px-3 py-1.5 rounded-lg bg-surface/40 border border-borderSubtle/60">
+              <div class="flex items-center space-x-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-glowEmerald"></span>
+                <span class="text-slate-300">http-api-8080</span>
+              </div>
+              <span class="text-[10px] text-emerald-400 font-semibold">:8080</span>
+            </div>
+            <div class="flex items-center justify-between px-3 py-1.5 rounded-lg bg-surface/40 border border-borderSubtle/60">
+              <div class="flex items-center space-x-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-glowEmerald"></span>
+                <span class="text-slate-300">wake-lock</span>
+              </div>
+              <span class="text-[10px] text-slate-500">sys</span>
+            </div>
+            <div id="service-esp32-dns" class="flex items-center justify-between px-3 py-1.5 rounded-lg bg-surface/40 border border-borderSubtle/60">
+              <div class="flex items-center space-x-2">
+                <span id="sidebar-esp32-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-glowEmerald"></span>
+                <span class="text-slate-300">esp32-pihole</span>
+              </div>
+              <div class="flex items-center space-x-1.5">
+                <span id="sidebar-esp32-lat" class="text-[10px] text-cyan-400 font-mono">21ms</span>
+                <a id="sidebar-esp32-link" href="http://192.168.1.50:80" target="_blank" title="Open Pi-hole Web UI (192.168.1.50:80)" class="text-slate-400 hover:text-emerald-400 text-[11px] font-mono transition-colors">↗</a>
+              </div>
+            </div>
+            <div class="flex items-center justify-between px-3 py-1.5 rounded-lg bg-surface/40 border border-borderSubtle/60">
+              <div class="flex items-center space-x-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-glowEmerald"></span>
+                <span class="text-slate-300">mosquitto-mqtt</span>
+              </div>
+              <span class="text-[10px] text-emerald-400 font-semibold">:1883</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar Node Footer -->
+      <div class="p-4 border-t border-borderSubtle bg-[#0D1015]">
+        <div class="flex items-center justify-between mb-2 text-xs">
+          <span class="text-slate-400 font-mono">Process Memory</span>
+          <span class="text-emerald-400 font-mono font-semibold">&lt; 35 MB</span>
+        </div>
+        <div class="w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden">
+          <div class="bg-gradient-to-r from-emerald-500 to-cyan-500 h-1.5 rounded-full" style="width: 18%"></div>
+        </div>
+        <div class="mt-3 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+          <span>PIN: <strong class="text-slate-300">1337</strong></span>
+          <span id="gateway-source" class="text-cyan-400">J5 Tunnel</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT VIEWPORT -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      
+      <!-- TOP NODE HEADER: Proxmox/Homelab Cluster Bar -->
+      <header class="sticky top-0 z-30 px-6 py-4 bg-[#0E1116]/90 backdrop-blur-xl border-b border-borderSubtle">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          
+          <!-- Node Title & Status Metadata -->
+          <div class="flex items-center space-x-4">
+            <div>
+              <div class="flex items-center space-x-2 text-xs font-mono text-slate-400">
+                <span>Cluster</span>
+                <span>/</span>
+                <span class="text-slate-300">Homelab Nodes</span>
+                <span>/</span>
+                <span class="text-emerald-400 font-semibold">j5-freelance-node</span>
+              </div>
+              <div class="flex items-center space-x-3 mt-1">
+                <h2 class="text-xl font-heading font-bold text-white tracking-tight">j5-freelance-node</h2>
+                <div class="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-mono">
+                  <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </span>
+                  <span>Running</span>
+                </div>
+                <span id="top-uptime" class="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-surface border border-borderSubtle text-slate-300 text-xs font-mono">Up 3h 35m</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Circular Gauges & Control Actions -->
+          <div class="flex items-center space-x-5">
+            
+            <!-- CPU Load Circular Gauge -->
+            <div class="flex items-center space-x-3 bg-surface/70 border border-borderSubtle px-3 py-1.5 rounded-xl">
+              <div class="relative w-12 h-12 flex items-center justify-center">
+                <svg class="w-12 h-12 transform -rotate-90">
+                  <circle cx="24" cy="24" r="19" stroke="rgba(245, 158, 11, 0.15)" stroke-width="4" fill="transparent"/>
+                  <circle id="gauge-cpu" class="gauge-circle" cx="24" cy="24" r="19" stroke="#F59E0B" stroke-width="4" fill="transparent" stroke-dasharray="119.38" stroke-dashoffset="60" stroke-linecap="round"/>
+                </svg>
+                <span id="gauge-cpu-val" class="absolute text-[11px] font-mono font-bold text-amber-400">45%</span>
+              </div>
+              <div class="text-left">
+                <div class="text-[10px] uppercase font-mono tracking-wider text-slate-400">J5 CPU</div>
+                <div id="gauge-cpu-load" class="text-xs font-mono text-slate-200 font-semibold">1.25 load</div>
+              </div>
+            </div>
+
+            <!-- RAM Usage Circular Gauge -->
+            <div class="flex items-center space-x-3 bg-surface/70 border border-borderSubtle px-3 py-1.5 rounded-xl">
+              <div class="relative w-12 h-12 flex items-center justify-center">
+                <svg class="w-12 h-12 transform -rotate-90">
+                  <circle cx="24" cy="24" r="19" stroke="rgba(168, 85, 247, 0.15)" stroke-width="4" fill="transparent"/>
+                  <circle id="gauge-ram" class="gauge-circle" cx="24" cy="24" r="19" stroke="#A855F7" stroke-width="4" fill="transparent" stroke-dasharray="119.38" stroke-dashoffset="40" stroke-linecap="round"/>
+                </svg>
+                <span id="gauge-ram-val" class="absolute text-[11px] font-mono font-bold text-violet-400">58%</span>
+              </div>
+              <div class="text-left">
+                <div class="text-[10px] uppercase font-mono tracking-wider text-slate-400">J5 RAM</div>
+                <div id="gauge-ram-sub" class="text-xs font-mono text-slate-200 font-semibold">1.06 GiB</div>
+              </div>
+            </div>
+
+            <!-- Force Scan & Action Buttons -->
+            <div class="flex items-center space-x-2">
+              <button onclick="triggerScanNow()" id="btn-force-scan" class="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-semibold text-xs tracking-wide shadow-glowEmerald transition-all active:scale-95">
+                <svg id="icon-scan" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                <span class="hidden sm:inline">Scout Poll</span>
+              </button>
+
+              <button onclick="fetchState(true)" title="Refresh Telemetry" class="p-2 rounded-xl bg-surface hover:bg-surfaceHover border border-borderSubtle text-slate-300 hover:text-white transition-all active:scale-95">
+                <svg id="icon-refresh" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+              </button>
+
+              <button onclick="lockDashboard()" title="Lock Session (PIN)" class="p-2 rounded-xl bg-surface
+              <button onclick="openSettingsModal()" title="Node Settings &amp; Onboarding" class="p-2 rounded-xl bg-surface hover:bg-surfaceHover border border-borderSubtle text-slate-300 hover:text-emerald-400 transition-all active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+              </button> hover:bg-surfaceHover border border-borderSubtle text-slate-300 hover:text-amber-400 transition-all active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-width="2"/>
+                  <path d="M7 11V7a5 5 0 0110 0v4" stroke-width="2"/>
+                </svg>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </header>
+
+      <!-- 4-COLUMN HARDWARE TELEMETRY & LEAD SPARKLINE ROW (2x2 on Mobile, 4-col on Desktop) -->
+      <section class="p-4 sm:p-6 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        
+        <!-- Card 1: CPU & Temperature Engine -->
+        <div class="bg-surface border border-borderSubtle rounded-2xl p-4 shadow-nodeCard relative overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono uppercase tracking-wider text-slate-400">CPU & Thermal</span>
+            <span id="metric-temp" class="text-xs font-mono px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20">26.5°C</span>
+          </div>
+          <div class="flex items-baseline space-x-2 my-1">
+            <span id="metric-cpu-pct" class="text-2xl font-mono font-bold text-white">45.2%</span>
+            <span class="text-xs text-slate-400 font-mono">4 Cores Active</span>
+          </div>
+          <div class="text-[11px] text-slate-400 font-mono truncate mb-3" id="metric-cpu-load-desc">Load: 1.14, 1.42, 1.68</div>
+          
+          <!-- Area Sparkline -->
+          <div class="w-full h-10 mt-auto">
+            <svg id="sparkline-cpu" class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 30"></svg>
+          </div>
+        </div>
+
+        <!-- Card 2: Memory Allocation -->
+        <div class="bg-surface border border-borderSubtle rounded-2xl p-4 shadow-nodeCard relative overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono uppercase tracking-wider text-slate-400">System Memory</span>
+            <span id="metric-mem-pct" class="text-xs font-mono px-2 py-0.5 rounded-md bg-violet-500/10 text-violet-300 border border-violet-500/20">58.4%</span>
+          </div>
+          <div class="flex items-baseline space-x-2 my-1">
+            <span id="metric-mem-used" class="text-2xl font-mono font-bold text-white">1060 MiB</span>
+            <span class="text-xs text-slate-400 font-mono">/ 1816 MiB</span>
+          </div>
+          <div class="text-[11px] text-slate-400 font-mono truncate mb-3" id="metric-mem-free-desc">Free: 756 MiB • ZRAM: 1.5 GiB</div>
+          
+          <!-- Area Sparkline -->
+          <div class="w-full h-10 mt-auto">
+            <svg id="sparkline-mem" class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 30"></svg>
+          </div>
+        </div>
+
+        <!-- Card 3: Scouted Hardware Leads -->
+        <div class="bg-surface border border-borderSubtle rounded-2xl p-4 shadow-nodeCard relative overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono uppercase tracking-wider text-slate-400">Scouted Leads</span>
+            <span id="metric-pending-pill" class="text-xs font-mono px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">2 Pending</span>
+          </div>
+          <div class="flex items-baseline space-x-2 my-1">
+            <span id="metric-total-scouted" class="text-2xl font-mono font-bold text-white">4 Leads</span>
+            <span class="text-xs text-slate-400 font-mono">1 Bid Placed</span>
+          </div>
+          <div class="text-[11px] text-slate-400 font-mono truncate mb-3">KiCad • PCB • ESP32 • 3D Case</div>
+          
+          <!-- Step Sparkline -->
+          <div class="w-full h-10 mt-auto">
+            <svg id="sparkline-leads" class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 30"></svg>
+          </div>
+        </div>
+
+        <!-- Card 4: Fiverr & Freelancer Inquiries -->
+        <div class="bg-surface border border-borderSubtle rounded-2xl p-4 shadow-nodeCard relative overflow-hidden flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono uppercase tracking-wider text-slate-400">Client Inquiries</span>
+            <span id="metric-unread-pill" class="text-xs font-mono px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">4 Unread</span>
+          </div>
+          <div class="flex items-baseline space-x-2 my-1">
+            <span id="metric-fiverr-count" class="text-2xl font-mono font-bold text-white">4 Messages</span>
+            <span class="text-xs text-slate-400 font-mono">IMAP Active</span>
+          </div>
+          <div class="text-[11px] text-slate-400 font-mono truncate mb-3">Direct Webhook Embed Dispatched</div>
+          
+          <!-- Area Sparkline -->
+          <div class="w-full h-10 mt-auto">
+            <svg id="sparkline-fiverr" class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 30"></svg>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- SPLIT MAIN WORKSPACE -->
+      <section class="px-6 pb-12 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- LEFT/CENTER COLUMN: 3D Swipe Deck & Queue (lg:col-span-8) -->
+        <div class="lg:col-span-8 space-y-6">
+          
+          <!-- VIEW 1: Overview & 3D Swipe Card Deck -->
+          <div id="view-overview" class="view-panel space-y-4">
+            
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-heading font-bold text-white">Hardware Match Queue</h3>
+                <p class="text-xs text-slate-400">Swipe Right (→) to configure bid, Swipe Left (←) to dismiss</p>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span id="deck-counter" class="text-xs font-mono px-2.5 py-1 rounded-lg bg-surface border border-borderSubtle text-slate-300 font-semibold">Lead 1 of 2</span>
+              </div>
+            </div>
+
+            <!-- THE 3D CARD STACK CONTAINER -->
+            <div id="deck-stack-wrapper" class="relative">
+              
+              <div id="cardDeckContainer" class="deck-container">
+                <!-- Top interactive card & underneath cards injected dynamically via JS -->
+              </div>
+
+              <!-- SMART EMPTY STATE (renders when 0 pending leads) -->
+              <div id="deckEmptyState" class="hidden bg-surface border border-borderSubtle rounded-2xl p-8 text-center shadow-nodeCard space-y-6">
+                <div class="w-16 h-16 mx-auto rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-glowEmerald">
+                  <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                </div>
+                <div class="max-w-md mx-auto space-y-2">
+                  <h4 class="text-lg font-heading font-bold text-white">All Scouted Leads Processed</h4>
+                  <p class="text-xs text-slate-400">There are no pending cards in your active swipe deck right now. You can re-open any previously dismissed job below or force an immediate scout scan.</p>
+                </div>
+                <div class="flex flex-wrap items-center justify-center gap-3">
+                  <button onclick="triggerScanNow()" class="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-semibold text-xs tracking-wide shadow-glowEmerald transition-all active:scale-95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    <span>Force J5 Scout Poll Now</span>
+                  </button>
+                  <button onclick="switchView('queue')" class="px-4 py-2.5 rounded-xl bg-surfaceHover hover:bg-surfaceActive border border-borderSubtle text-slate-300 font-heading font-medium text-xs transition-all">
+                    <span>View All Scouted Leads</span>
+                  </button>
+                </div>
+
+                <!-- Past Scouted Quick Reopen Table -->
+                <div class="mt-8 pt-6 border-t border-borderSubtle text-left">
+                  <div class="text-xs font-mono uppercase tracking-wider text-slate-400 mb-3">Past Scouted Matches (Re-queue into Deck)</div>
+                  <div id="past-leads-container" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    <!-- Injected via JS -->
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- VIEW 2: Freelancer Queue (Full Table) -->
+          <div id="view-queue" class="view-panel hidden space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 class="text-lg font-heading font-bold text-white">Freelancer Match Catalog</h3>
+                <p class="text-xs text-slate-400">All KiCad, PCB & Hardware leads scouted by J5 cron</p>
+              </div>
+              <div class="flex items-center space-x-2">
+                <input id="search-jobs" oninput="renderJobsQueueTable()" type="text" placeholder="Search keywords or titles..." class="px-3 py-1.5 rounded-xl bg-surface border border-borderSubtle text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 font-mono w-48 sm:w-64">
+              </div>
+            </div>
+
+            <div class="bg-surface border border-borderSubtle rounded-2xl overflow-hidden shadow-nodeCard">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-[#101318] border-b border-borderSubtle text-slate-400 font-mono uppercase text-[10px]">
+                      <th class="p-3">Project Title</th>
+                      <th class="p-3">Budget</th>
+                      <th class="p-3">Keywords</th>
+                      <th class="p-3">Status</th>
+                      <th class="p-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="queue-table-body" class="divide-y divide-borderSubtle font-sans">
+                    <!-- Injected via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- VIEW 3: Fiverr Live Inbox -->
+          <div id="view-fiverr" class="view-panel hidden space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-heading font-bold text-white">Fiverr Live Inquiries</h3>
+                <p class="text-xs text-slate-400">Synchronized directly via J5 IMAP background daemon</p>
+              </div>
+              <div class="flex items-center space-x-2">
+                <button onclick="clearAllFiverr()" title="Clear All Inquiries" class="text-xs font-mono px-3 py-1.5 rounded-xl bg-surface hover:bg-rose-950/40 border border-borderSubtle hover:border-rose-500/40 text-slate-300 hover:text-rose-300 flex items-center space-x-1.5 transition-colors">
+                  <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                  <span>Clear All</span>
+                </button>
+                <button onclick="fetchState(true)" class="text-xs font-mono px-3 py-1.5 rounded-xl bg-surface border border-borderSubtle text-slate-300 hover:text-white flex items-center space-x-1.5">
+                  <svg class="w-3.5 h-3.5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                  <span>Check Inbox</span>
+                </button>
+              </div>
+            </div>
+
+            <div id="fiverr-inbox-list" class="space-y-3">
+              <!-- Injected via JS -->
+            </div>
+          </div>
+
+          <!-- VIEW 4: Scout History -->
+          <div id="view-history" class="view-panel hidden space-y-4">
+            <h3 class="text-lg font-heading font-bold text-white">Telemetry & Scout History</h3>
+            <p class="text-xs text-slate-400">Complete chronological audit record of bot operations</p>
+            <div id="history-container" class="bg-surface border border-borderSubtle rounded-2xl p-4 shadow-nodeCard space-y-3">
+              <!-- Injected via JS -->
+            </div>
+          </div>
+
+          <!-- VIEW 5: Live Terminal Full -->
+          <div id="view-terminal" class="view-panel hidden space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-heading font-bold text-white">System Console Stream</h3>
+              <div class="flex items-center space-x-2">
+                <button onclick="copyLogs()" class="px-2.5 py-1 text-xs font-mono rounded-lg bg-surface border border-borderSubtle text-slate-300 hover:text-white">Copy Logs</button>
+                <button onclick="clearConsoleView()" class="px-2.5 py-1 text-xs font-mono rounded-lg bg-surface border border-borderSubtle text-slate-300 hover:text-white">Clear</button>
+              </div>
+            </div>
+            <div class="bg-[#0B0D11] border border-borderSubtle rounded-2xl p-4 font-mono text-xs shadow-nodeCard overflow-hidden">
+              <div id="full-console-content" class="h-96 overflow-y-auto space-y-1 pr-2">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT COLUMN: Node Details Card & Mini Terminal (lg:col-span-4) -->
+        <div class="lg:col-span-4 space-y-6">
+          
+          <!-- QUICK NODE DETAILS CARD -->
+          <div class="bg-surface border border-borderSubtle rounded-2xl p-5 shadow-nodeCard space-y-5">
+            <div class="flex items-center justify-between pb-3 border-b border-borderSubtle">
+              <div class="flex items-center space-x-2">
+                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                </svg>
+                <h4 class="text-sm font-heading font-bold text-white">Node Connectivity</h4>
+              </div>
+              <span class="text-[11px] font-mono text-slate-400">Port :8080</span>
+            </div>
+
+            <!-- Local LAN IP -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-mono">Local Network (LAN)</span>
+                <span class="text-emerald-400 font-mono font-medium">Active</span>
+              </div>
+              <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-[#0D1015] border border-borderSubtle text-xs font-mono">
+                <span id="node-lan-ip" class="text-slate-200">http://192.168.1.X:8080</span>
+                <button onclick="copyToClipboard('http://192.168.1.X:8080')" class="text-slate-400 hover:text-white p-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Public Cloudflare Tunnel -->
+            <div class="space-y-1.5">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-mono">Cloudflare Public Tunnel</span>
+                <span class="text-cyan-400 font-mono font-medium">SSL Live</span>
+              </div>
+              <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-[#0D1015] border border-borderSubtle text-xs font-mono">
+                <a id="node-tunnel-url" href="#" target="_blank" class="text-cyan-300 truncate max-w-[200px] hover:underline">Connecting...</a>
+                <button onclick="copyTunnelUrl()" class="text-slate-400 hover:text-white p-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="9" y="9" width="13" height="13" rx="2" stroke-width="2"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- 24/7 Network Latency & ESP32 Uptime Pings -->
+            <div class="space-y-2 pt-2 border-t border-borderSubtle">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-mono">24/7 Uptime Latency Pings</span>
+                <span id="pings-mqtt-pill" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">MQTT :1883</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-center font-mono">
+                <!-- Internet -->
+                <div class="p-2 rounded-xl bg-[#0D1015] border border-borderSubtle">
+                  <div class="text-[10px] text-slate-500 truncate">1.1.1.1</div>
+                  <div id="ping-internet-val" class="text-xs font-bold text-emerald-400 mt-0.5">18 ms</div>
+                  <div class="text-[9px] text-slate-400">Cloudflare</div>
+                </div>
+                <!-- Gateway Router -->
+                <div class="p-2 rounded-xl bg-[#0D1015] border border-borderSubtle">
+                  <div class="text-[10px] text-slate-500 truncate">192.168.1.1</div>
+                  <div id="ping-gateway-val" class="text-xs font-bold text-emerald-400 mt-0.5">2 ms</div>
+                  <div class="text-[9px] text-slate-400">Gateway</div>
+                </div>
+                <!-- ESP32 Node -->
+                <div class="p-2 rounded-xl bg-[#0D1015] border border-borderSubtle flex flex-col justify-between">
+                  <div class="text-[10px] text-slate-500 truncate">192.168.1.50</div>
+                  <div id="ping-esp32-val" class="text-xs font-bold text-cyan-400 mt-0.5">21 ms</div>
+                  <div class="flex items-center justify-center space-x-1 mt-0.5">
+                    <span class="text-[9px] text-slate-400">DNS Node</span>
+                    <a id="ping-esp32-link" href="http://192.168.1.50:80" target="_blank" title="Open Pi-hole Web UI" class="text-emerald-400 hover:underline text-[9px] font-bold">↗</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ESP32-C3 Pi-hole DNS Ad Blocker Live Telemetry Card -->
+            <div class="space-y-2.5 pt-3 border-t border-borderSubtle">
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-2">
+                  <span id="esp32-card-dot" class="w-2 h-2 rounded-full bg-emerald-400 shadow-glowEmerald"></span>
+                  <span class="font-heading font-semibold text-white">esp32-pihole (192.168.1.50)</span>
+                </div>
+                <a id="esp32-card-link" href="http://192.168.1.50:80" target="_blank" class="px-2 py-0.5 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-mono flex items-center space-x-1 transition-colors">
+                  <span>Open Web UI</span>
+                  <span>↗</span>
+                </a>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 text-left font-mono">
+                <div class="p-2.5 rounded-xl bg-[#0D1015] border border-borderSubtle">
+                  <div class="text-[10px] text-slate-500 uppercase">Lookups Today</div>
+                  <div id="esp32-lookups" class="text-sm font-bold text-white mt-0.5">--</div>
+                  <div id="esp32-blocking-badge" class="text-[9px] text-emerald-400 mt-0.5 font-semibold">● Blocking ON</div>
+                </div>
+
+                <div class="p-2.5 rounded-xl bg-[#0D1015] border border-borderSubtle">
+                  <div class="text-[10px] text-slate-500 uppercase">Ads Blocked</div>
+                  <div id="esp32-blocked" class="text-sm font-bold text-emerald-400 mt-0.5">--</div>
+                  <div id="esp32-devices" class="text-[9px] text-slate-400 mt-0.5">-- Active Devices</div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 px-1">
+                <span>Blocklist: <strong id="esp32-domains" class="text-slate-300">--</strong></span>
+                <span>Uptime: <strong id="esp32-uptime" class="text-slate-300">--</strong></span>
+              </div>
+            </div>
+
+            <!-- Battery Level & Power -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-1.5 text-slate-400 font-mono">
+                  <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                  </svg>
+                  <span>Battery & Power</span>
+                </div>
+                <span id="node-battery-val" class="font-mono text-slate-200 font-semibold">68% (Charging)</span>
+              </div>
+              <div class="w-full bg-[#0D1015] rounded-full h-2 overflow-hidden border border-borderSubtle">
+                <div id="node-battery-bar" class="bg-gradient-to-r from-amber-500 to-emerald-400 h-2 rounded-full transition-all duration-500" style="width: 68%"></div>
+              </div>
+            </div>
+
+            <!-- Storage Meter (/data) -->
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-1.5 text-slate-400 font-mono">
+                  <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7M4 7c0-2 1.5-3 3.5-3h9c2 0 3.5 1 3.5 3M4 7h16m-5 5h.01"/>
+                  </svg>
+                  <span>Storage /data</span>
+                </div>
+                <span id="node-storage-val" class="font-mono text-slate-200 font-semibold">9.51 GB / 10.81 GB</span>
+              </div>
+              <div class="w-full bg-[#0D1015] rounded-full h-2 overflow-hidden border border-borderSubtle">
+                <div id="node-storage-bar" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500" style="width: 88%"></div>
+              </div>
+            </div>
+
+            <!-- Target Keywords Pill Cloud -->
+            <div class="space-y-2 pt-2 border-t border-borderSubtle">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-mono">Target Niche Keywords</span>
+                <span class="text-[11px] font-mono text-emerald-400">20 Active</span>
+              </div>
+              <div id="target-keywords-list" class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Strict Blacklist -->
+            <div class="space-y-2 pt-2 border-t border-borderSubtle">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-400 font-mono">Strict Blacklist</span>
+                <span class="text-[11px] font-mono text-rose-400">16 Blocked</span>
+              </div>
+              <div id="blacklist-keywords-list" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+          </div>
+
+          <!-- COLOR-CODED MINI CONSOLE STREAM -->
+          <div class="bg-[#0B0D11] border border-borderSubtle rounded-2xl p-4 font-mono text-xs shadow-nodeCard space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-borderSubtle">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <span class="ml-2 text-slate-400 font-mono text-[11px]">LIVE LOGS (job_bot.log)</span>
+              </div>
+              <button onclick="fetchState(true)" class="text-slate-400 hover:text-white text-[11px]">Refresh</button>
+            </div>
+            
+            <div id="mini-console-content" class="h-64 overflow-y-auto space-y-1 text-[11px] pr-1 leading-relaxed">
+              <div class="text-slate-500">// Connecting to J5 Command Center stream...</div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+  </div>
+
+  <!-- MOBILE BOTTOM NAVIGATION BAR (Thumb-friendly >= 48px touch targets) -->
+  <nav class="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#101318]/95 backdrop-blur-xl border-t border-borderSubtle flex items-center justify-around px-2 py-1 safe-area-bottom">
+    <button onclick="switchView('overview')" id="mob-nav-overview" class="mob-nav-item flex-1 flex flex-col items-center justify-center min-h-[48px] py-1 text-emerald-400 transition-colors">
+      <div class="relative">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="1.5" stroke-width="2"/>
+          <rect x="14" y="3" width="7" height="7" rx="1.5" stroke-width="2"/>
+          <rect x="14" y="14" width="7" height="7" rx="1.5" stroke-width="2"/>
+          <rect x="3" y="14" width="7" height="7" rx="1.5" stroke-width="2"/>
+        </svg>
+        <span id="mob-badge-pending" class="absolute -top-1.5 -right-2.5 px-1 text-[9px] font-mono rounded-full bg-emerald-500 text-black font-bold">0</span>
+      </div>
+      <span class="text-[10px] font-mono mt-1">Deck</span>
+    </button>
+
+    <button onclick="switchView('queue')" id="mob-nav-queue" class="mob-nav-item flex-1 flex flex-col items-center justify-center min-h-[48px] py-1 text-slate-400 hover:text-slate-200 transition-colors">
+      <div class="relative">
+        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+        </svg>
+      </div>
+      <span class="text-[10px] font-mono mt-1">Queue</span>
+    </button>
+
+    <button onclick="switchView('fiverr')" id="mob-nav-fiverr" class="mob-nav-item flex-1 flex flex-col items-center justify-center min-h-[48px] py-1 text-slate-400 hover:text-slate-200 transition-colors">
+      <div class="relative">
+        <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        </svg>
+        <span id="mob-badge-fiverr" class="absolute -top-1.5 -right-2.5 px-1 text-[9px] font-mono rounded-full bg-violet-500 text-white font-bold">0</span>
+      </div>
+      <span class="text-[10px] font-mono mt-1">Fiverr</span>
+    </button>
+
+    <button onclick="switchView('terminal')" id="mob-nav-terminal" class="mob-nav-item flex-1 flex flex-col items-center justify-center min-h-[48px] py-1 text-slate-400 hover:text-slate-200 transition-colors">
+      <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      <span class="text-[10px] font-mono mt-1">Terminal</span>
+    </button>
+  </nav>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- INLINE BID MODAL / DRAWER (EXPANDABLE) -->
+  <div id="bidDrawerOverlay"
+  <!-- SETTINGS & ONBOARDING MODAL -->
+  <div id="settingsModal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-surface border border-borderSubtle rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative">
+      <div class="flex items-center justify-between pb-3 border-b border-borderSubtle">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </div>
+          <div>
+            <span class="text-xs font-mono uppercase text-emerald-400">Homelab OS Configuration</span>
+            <h4 class="text-base font-heading font-bold text-white">Node Settings &amp; Gateway</h4>
+          </div>
+        </div>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs font-mono">
+        <div class="space-y-1.5">
+          <label class="text-slate-300">Custom Cloudflare Tunnel / API Endpoint</label>
+          <input id="setting-tunnel-url" type="text" placeholder="https://your-tunnel.trycloudflare.com" class="w-full px-3 py-2 rounded-xl bg-[#0D1015] border border-borderSubtle text-white focus:outline-none focus:border-emerald-500">
+          <span class="text-[10px] text-slate-500">Leave blank to use relative Vercel API gateway</span>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-slate-300">Dashboard Security PIN</label>
+          <input id="setting-pin" type="password" maxlength="8" placeholder="1337" class="w-full px-3 py-2 rounded-xl bg-[#0D1015] border border-borderSubtle text-white focus:outline-none focus:border-emerald-500">
+          <span class="text-[10px] text-slate-500">PIN sent as X-Auth-Pin header to authorize node operations</span>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="text-slate-300">ESP32-C3 Pi-hole LAN IP</label>
+          <input id="setting-esp32-ip" type="text" placeholder="192.168.1.50" class="w-full px-3 py-2 rounded-xl bg-[#0D1015] border border-borderSubtle text-white focus:outline-none focus:border-emerald-500">
+          <span class="text-[10px] text-slate-500">IP address of your local ESP32 Pi-hole DNS ad-blocker</span>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-3 border-t border-borderSubtle">
+        <button onclick="resetSettings()" class="text-xs font-mono text-rose-400 hover:underline">Reset Defaults</button>
+        <div class="flex items-center space-x-2">
+          <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl bg-surfaceHover hover:bg-surfaceActive border border-borderSubtle text-xs text-slate-300 font-heading">Cancel</button>
+          <button onclick="saveSettings()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-semibold text-xs shadow-glowEmerald">Save &amp; Reconnect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+ class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-surface border border-borderSubtle rounded-2xl max-w-xl w-full p-6 shadow-deckTop space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-borderSubtle">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <div>
+            <span class="text-xs font-mono uppercase text-emerald-400">Freelancer API Bid Submission</span>
+            <h4 id="bidModalTitle" class="text-base font-heading font-bold text-white truncate max-w-md">Project Title</h4>
+          </div>
+        </div>
+        <button onclick="closeBidDrawer()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Budget Reference -->
+        <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#0D1015] border border-borderSubtle text-xs">
+          <span class="text-slate-400 font-mono">Client Listed Budget:</span>
+          <span id="bidModalBudget" class="font-mono text-emerald-400 font-bold text-sm">$50 - $150 USD</span>
+        </div>
+
+        <!-- Bid Amount & Stepper Pills -->
+        <div class="space-y-2">
+          <label class="block text-xs font-mono text-slate-300">Your Bid Amount ($ USD)</label>
+          <div class="flex items-center space-x-2">
+            <input id="bidInputAmount" type="number" step="5" class="flex-1 px-4 py-2.5 rounded-xl bg-[#0D1015] border border-borderSubtle text-white font-mono text-base font-bold focus:outline-none focus:border-emerald-500">
+            <button onclick="adjustBid(-10)" class="px-3 py-2.5 rounded-xl bg-surfaceHover hover:bg-surfaceActive border border-borderSubtle text-xs font-mono text-slate-300 font-semibold">- $10</button>
+            <button onclick="adjustBid(10)" class="px-3 py-2.5 rounded-xl bg-surfaceHover hover:bg-surfaceActive border border-borderSubtle text-xs font-mono text-slate-300 font-semibold">+ $10</button>
+          </div>
+        </div>
+
+        <!-- Delivery Period -->
+        <div class="space-y-2">
+          <label class="block text-xs font-mono text-slate-300">Delivery Period (Days)</label>
+          <input id="bidInputPeriod" type="number" value="3" min="1" max="60" class="w-full px-4 py-2 rounded-xl bg-[#0D1015] border border-borderSubtle text-white font-mono text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <!-- Proposal Pitch Textarea -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-mono text-slate-300">Custom Proposal Pitch</label>
+            <span class="text-[11px] font-mono text-slate-500">Auto-targeted to KiCad / PCB / 3D Case</span>
+          </div>
+          <textarea id="bidInputPitch" rows="4" class="w-full px-4 py-2.5 rounded-xl bg-[#0D1015] border border-borderSubtle text-slate-200 text-xs font-sans leading-relaxed focus:outline-none focus:border-emerald-500"></textarea>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="flex items-center justify-end space-x-3 pt-3 border-t border-borderSubtle">
+        <button onclick="closeBidDrawer()" class="px-4 py-2 rounded-xl bg-surfaceHover hover:bg-surfaceActive border border-borderSubtle text-xs text-slate-300 font-heading">Cancel</button>
+        <button id="btnSubmitBid" onclick="submitBidNow()" class="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-semibold text-xs tracking-wide shadow-glowEmerald transition-all active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+          </svg>
+          <span>Submit Bid to Freelancer API</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION SCRIPTS -->
+  <script>
+    // Global State
+    let AppState = {
+      jobs: [],           // Pending jobs for swipe deck
+      allScouted: [],     // All scouted jobs
+      fiverrInbox: [],    // Messages from Fiverr
+      stats: {},          // Stats object
+      telemetry: null,    // Telemetry object
+      esp32Pihole: null,  // ESP32-C3 Pi-hole node telemetry
+      logs: [],           // Last 50 log lines
+      activeView: 'overview',
+      currentIndex: 0,    // Current active card index
+      activeJobForBid: null,
+      apiBase: window.location.origin,
+      pin: sessionStorage.getItem('homelab_pin') || '',
+    };
+
+    // Auto-detect API Base
+    if (window.location.hostname.includes('vercel.app')) {
+      AppState.apiBase = window.location.origin;
+    }
+
+    // Default Pitch Template
+    const DEFAULT_PITCH = "Hi! I specialize in turning breadboard/Fritzing circuits into clean 2-layer PCBs in KiCad (schematic, layout, Gerber, BOM) and designing matching 3D-printable enclosures (STL/STEP). I checked your project details and can deliver clean design files checked against your manufacturer rules. Let me know if you can share the wiring or size limits!";
+
+    let enteredPin = '';
+    let pollIntervalId = null;
+
+    function checkPinAuth() {
+      const stored = sessionStorage.getItem('homelab_pin');
+      if (stored && stored.length >= 4) {
+        AppState.pin = stored;
+        document.getElementById('pinLockModal').classList.add('hidden');
+        return true;
+      }
+      showPinLock();
+      return false;
+    }
+
+    function showPinLock() {
+      enteredPin = '';
+      updatePinDots();
+      document.getElementById('pinErrorMsg').classList.add('hidden');
+      document.getElementById('pinLockModal').classList.remove('hidden');
+    }
+
+    function lockDashboard() {
+      sessionStorage.removeItem('homelab_pin');
+      AppState.pin = '';
+      if (pollIntervalId) {
+        clearInterval(pollIntervalId);
+        pollIntervalId = null;
+      }
+      showPinLock();
+    }
+
+    function pinInputDigit(digit) {
+      if (enteredPin.length < 4) {
+        enteredPin += digit;
+        updatePinDots();
+        if (enteredPin.length === 4) {
+          setTimeout(submitPin, 120);
+        }
+      }
+    }
+
+    function pinClear() {
+      enteredPin = '';
+      updatePinDots();
+      document.getElementById('pinErrorMsg').classList.add('hidden');
+    }
+
+    function updatePinDots() {
+      for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById(`dot-${i}`);
+        if (!dot) continue;
+        if (i < enteredPin.length) {
+          dot.className = 'w-3.5 h-3.5 rounded-full border border-emerald-400 bg-emerald-400 shadow-glowEmerald transition-all';
+        } else {
+          dot.className = 'w-3.5 h-3.5 rounded-full border border-slate-600 bg-transparent transition-all';
+        }
+      }
+    }
+
+    async function submitPin() {
+      if (enteredPin.length < 4) return;
+      const pinAttempt = enteredPin;
+      const pinCard = document.getElementById('pinCard');
+      const errorMsg = document.getElementById('pinErrorMsg');
+
+      try {
+        const resp = await fetch(`${AppState.apiBase}/api/state`, {
+          headers: { 'X-Auth-Pin': pinAttempt }
+        });
+
+        if (resp.status === 200) {
+          AppState.pin = pinAttempt;
+          sessionStorage.setItem('homelab_pin', pinAttempt);
+          document.getElementById('pinLockModal').classList.add('hidden');
+          const data = await resp.json();
+          processStateData(data);
+          showToast('Node session authenticated', 'success');
+          if (!pollIntervalId) {
+            pollIntervalId = setInterval(fetchState, 10000);
+          }
+        } else {
+          throw new Error('Unauthorized');
+        }
+      } catch (err) {
+        if (errorMsg) errorMsg.classList.remove('hidden');
+        if (pinCard) {
+          pinCard.classList.add('animate-shake');
+          setTimeout(() => pinCard.classList.remove('animate-shake'), 450);
+        }
+        pinClear();
+      }
+    }
+
+    
+    function openSettingsModal() {
+      const modal = document.getElementById('settingsModal');
+      if (!modal) return;
+      document.getElementById('setting-tunnel-url').value = localStorage.getItem('homelab_custom_tunnel') || '';
+      document.getElementById('setting-pin').value = AppState.pin || '1337';
+      document.getElementById('setting-esp32-ip').value = localStorage.getItem('homelab_esp32_ip') || '192.168.1.50';
+      modal.classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      const modal = document.getElementById('settingsModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function saveSettings() {
+      const tunnel = document.getElementById('setting-tunnel-url').value.trim();
+      const pin = document.getElementById('setting-pin').value.trim() || '1337';
+      const espIp = document.getElementById('setting-esp32-ip').value.trim() || '192.168.1.50';
+
+      if (tunnel) {
+        localStorage.setItem('homelab_custom_tunnel', tunnel);
+        AppState.apiBase = tunnel.replace(/\/$/, '');
+      } else {
+        localStorage.removeItem('homelab_custom_tunnel');
+        AppState.apiBase = window.location.origin;
+      }
+
+      AppState.pin = pin;
+      sessionStorage.setItem('homelab_pin', pin);
+      localStorage.setItem('homelab_esp32_ip', espIp);
+
+      closeSettingsModal();
+      showToast('Settings saved. Refreshing state...', 'success');
+      fetchState(true);
+    }
+
+    function resetSettings() {
+      localStorage.removeItem('homelab_custom_tunnel');
+      localStorage.removeItem('homelab_esp32_ip');
+      AppState.apiBase = window.location.origin;
+      AppState.pin = '1337';
+      sessionStorage.setItem('homelab_pin', '1337');
+      closeSettingsModal();
+      showToast('Settings reset to defaults', 'info');
+      fetchState(true);
+    }
+
+    // Initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      // PWA Service Worker Registration
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(err => {
+          console.warn('SW registration failed:', err);
+        });
+      }
+
+      const isAuthed = checkPinAuth();
+      if (isAuthed) {
+        fetchState();
+        pollIntervalId = setInterval(fetchState, 10000); // 10s auto-refresh
+      }
+
+      // Setup Keyboard Navigation
+      window.addEventListener('keydown', (e) => {
+        const pinModal = document.getElementById('pinLockModal');
+        if (pinModal && !pinModal.classList.contains('hidden')) {
+          if (e.key >= '0' && e.key <= '9') {
+            pinInputDigit(e.key);
+          } else if (e.key === 'Backspace') {
+            enteredPin = enteredPin.slice(0, -1);
+            updatePinDots();
+          } else if (e.key === 'Enter') {
+            submitPin();
+          }
+          return;
+        }
+
+        if (document.getElementById('bidDrawerOverlay').classList.contains('hidden')) {
+          if (e.key === 'ArrowLeft') {
+            declineTopCard();
+          } else if (e.key === 'ArrowRight') {
+            acceptTopCard();
+          }
+        } else if (e.key === 'Escape') {
+          closeBidDrawer();
+        }
+      });
+
+      // Mobile Menu Toggle
+      const mobileBtn = document.getElementById('mobileMenuBtn');
+      const sidebar = document.getElementById('sidebar');
+      if (mobileBtn && sidebar) {
+        mobileBtn.addEventListener('click', () => {
+          sidebar.classList.toggle('-translate-x-full');
+        });
+      }
+    });
+
+    // ----------------------------------------------------
+    // API Fetcher & Polling (Dual-Homing Architecture)
+    // ----------------------------------------------------
+    async function fetchState(manual = false) {
+      if (!AppState.pin) {
+        showPinLock();
+        return;
+      }
+
+      const refreshIcon = document.getElementById('icon-refresh');
+      if (refreshIcon && manual) refreshIcon.classList.add('animate-spin');
+
+      try {
+        let resp = null;
+        let data = null;
+
+        // 1. Try relative endpoint (/api/state)
+        try {
+          resp = await fetch(`${AppState.apiBase}/api/state`, {
+            headers: { 'X-Auth-Pin': AppState.pin }
+          });
+          if (resp.status === 401) {
+            lockDashboard();
+            return;
+          }
+          if (resp.ok) {
+            data = await resp.json();
+          }
+        } catch (e) {
+          // relative failed
+        }
+
+        // 2. If Vercel was in fallback mode, test direct Cloudflare tunnel from browser
+        if (data && data.source === 'vercel_direct_gateway' && data.tunnel_url) {
+          try {
+            const directResp = await fetch(`${data.tunnel_url.replace(/\/$/, '')}/api/state`, {
+              headers: { 'X-Auth-Pin': AppState.pin },
+              signal: AbortSignal.timeout(3000)
+            });
+            if (directResp.status === 401) {
+              lockDashboard();
+              return;
+            }
+            if (directResp.ok) {
+              const directData = await directResp.json();
+              data = { ...directData, source: 'browser_direct_tunnel', tunnel_url: data.tunnel_url };
+            }
+          } catch (e) {
+            // direct tunnel not reachable from client browser, keep gateway data
+          }
+        }
+
+        // 3. Fallback to direct LAN IP if everything else failed
+        if (!data) {
+          const lanResp = await fetch('http://192.168.1.X:8080/api/state', {
+            headers: { 'X-Auth-Pin': AppState.pin },
+            signal: AbortSignal.timeout(3000)
+          });
+          if (lanResp.status === 401) {
+            lockDashboard();
+            return;
+          }
+          if (lanResp.ok) {
+            data = await lanResp.json();
+            data.source = 'lan_direct';
+          }
+        }
+
+        if (!data) throw new Error('All telemetry endpoints unreachable');
+
+        processStateData(data);
+        if (manual) showToast('Node state synchronized', 'success');
+
+      } catch (err) {
+        console.warn('[FETCH STATE ERROR]', err);
+        if (manual) showToast(`Sync error: ${err.message}`, 'error');
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+      }
+    }
+
+    function processStateData(data) {
+      AppState.jobs = data.jobs || [];
+      AppState.allScouted = data.all_scouted || data.jobs || [];
+      AppState.fiverrInbox = data.fiverr_inbox || [];
+      AppState.stats = data.stats || {};
+      AppState.telemetry = data.telemetry || null;
+      AppState.esp32Pihole = data.esp32_pihole || (data.telemetry && data.telemetry.esp32_pihole) || null;
+      AppState.networkPings = data.network_pings || (data.telemetry && data.telemetry.network_pings) || null;
+      AppState.logs = data.logs || [];
+
+      // Update Source Pill in sidebar
+      const srcEl = document.getElementById('gateway-source');
+      if (srcEl) {
+        if (data.source === 'j5_device_tunnel') srcEl.innerText = 'J5 Tunnel';
+        else if (data.source === 'browser_direct_tunnel') srcEl.innerText = 'Browser Direct';
+        else if (data.source === 'lan_direct') srcEl.innerText = 'LAN Direct';
+        else srcEl.innerText = 'Vercel Gateway';
+      }
+
+      // Check tunnel URL
+      if (data.tunnel_url) {
+        const tLink = document.getElementById('node-tunnel-url');
+        if (tLink) {
+          tLink.href = data.tunnel_url;
+          tLink.innerText = data.tunnel_url.replace('https://', '');
+        }
+      }
+
+      // Render UI Components
+      renderTopHeader();
+      renderTelemetryCards();
+      renderEsp32Pihole();
+      renderSwipeDeck();
+      renderJobsQueueTable();
+      renderFiverrInbox();
+      renderKeywordsCloud();
+      renderConsoleLogs();
+    }
+
+    // ----------------------------------------------------
+    // Top Header & Circular Gauges
+    // ----------------------------------------------------
+    function renderTopHeader() {
+      const t = AppState.telemetry;
+      if (!t) return;
+
+      // Uptime
+      const uptimeEl = document.getElementById('top-uptime');
+      if (uptimeEl && t.uptime) {
+        uptimeEl.innerText = t.uptime.formatted || `Up ${Math.floor(t.uptime.seconds / 3600)}h`;
+      }
+
+      // CPU Gauge (Radius 19, Circumference = 119.38)
+      const cpuCircle = document.getElementById('gauge-cpu');
+      const cpuVal = document.getElementById('gauge-cpu-val');
+      const cpuLoad = document.getElementById('gauge-cpu-load');
+      const cpuPct = t.cpu?.percent || 25.0;
+
+      if (cpuCircle) {
+        const offset = 119.38 - (cpuPct / 100) * 119.38;
+        cpuCircle.style.strokeDashoffset = offset;
+      }
+      if (cpuVal) cpuVal.innerText = `${Math.round(cpuPct)}%`;
+      if (cpuLoad && t.cpu) cpuLoad.innerText = `${t.cpu.load_1m || 1.0} load`;
+
+      // RAM Gauge
+      const ramCircle = document.getElementById('gauge-ram');
+      const ramVal = document.getElementById('gauge-ram-val');
+      const ramSub = document.getElementById('gauge-ram-sub');
+      const ramPct = t.memory?.percent || 58.0;
+
+      if (ramCircle) {
+        const offset = 119.38 - (ramPct / 100) * 119.38;
+        ramCircle.style.strokeDashoffset = offset;
+      }
+      if (ramVal) ramVal.innerText = `${Math.round(ramPct)}%`;
+      if (ramSub && t.memory) ramSub.innerText = `${(t.memory.used_mb / 1024).toFixed(2)} GiB`;
+
+      // Badges in Sidebar
+      const badgePending = document.getElementById('badge-pending');
+      if (badgePending) badgePending.innerText = AppState.jobs.length;
+
+      const mobBadgePending = document.getElementById('mob-badge-pending');
+      if (mobBadgePending) mobBadgePending.innerText = AppState.jobs.length;
+
+      const badgeTotalJobs = document.getElementById('badge-total-jobs');
+      if (badgeTotalJobs) badgeTotalJobs.innerText = AppState.allScouted.length;
+
+      const badgeFiverr = document.getElementById('badge-fiverr');
+      const mobBadgeFiverr = document.getElementById('mob-badge-fiverr');
+      const unreadCount = AppState.fiverrInbox.filter(i => i.status === 'unread').length;
+      if (badgeFiverr) badgeFiverr.innerText = unreadCount;
+      if (mobBadgeFiverr) mobBadgeFiverr.innerText = unreadCount;
+
+      const badgeHistory = document.getElementById('badge-history');
+      if (badgeHistory) badgeHistory.innerText = AppState.allScouted.length;
+    }
+
+    // ----------------------------------------------------
+    // ESP32-C3 Pi-hole Node Live Telemetry Renderer
+    // ----------------------------------------------------
+    function renderEsp32Pihole() {
+      const esp = AppState.esp32Pihole;
+      if (!esp) return;
+
+      const isOnline = esp.status === 'online';
+
+      // Sidebar indicators
+      const sideDot = document.getElementById('sidebar-esp32-dot');
+      const sideLat = document.getElementById('sidebar-esp32-lat');
+      const sideLink = document.getElementById('sidebar-esp32-link');
+
+      if (sideDot) {
+        sideDot.className = `w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400 shadow-glowEmerald' : 'bg-rose-500'}`;
+      }
+      if (sideLat) {
+        sideLat.innerText = isOnline && esp.latency_ms != null ? `${esp.latency_ms}ms` : 'offline';
+        sideLat.className = `text-[10px] font-mono ${isOnline ? 'text-cyan-400' : 'text-rose-400'}`;
+      }
+      if (sideLink && esp.url) sideLink.href = esp.url;
+
+      // Connectivity card indicators
+      const pingEsp = document.getElementById('ping-esp32-val');
+      const pingEspLink = document.getElementById('ping-esp32-link');
+      if (pingEsp) {
+        pingEsp.innerText = isOnline && esp.latency_ms != null ? `${esp.latency_ms} ms` : 'Offline';
+        pingEsp.className = `text-xs font-bold mt-0.5 ${isOnline ? 'text-cyan-400' : 'text-rose-400'}`;
+      }
+      if (pingEspLink && esp.url) pingEspLink.href = esp.url;
+
+      // Dedicated ESP32 Pi-hole telemetry card
+      const cardDot = document.getElementById('esp32-card-dot');
+      const cardLink = document.getElementById('esp32-card-link');
+      const lookupsEl = document.getElementById('esp32-lookups');
+      const blockedEl = document.getElementById('esp32-blocked');
+      const blockingBadge = document.getElementById('esp32-blocking-badge');
+      const devicesEl = document.getElementById('esp32-devices');
+      const domainsEl = document.getElementById('esp32-domains');
+      const uptimeEl = document.getElementById('esp32-uptime');
+
+      if (cardDot) {
+        cardDot.className = `w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 shadow-glowEmerald' : 'bg-rose-500'}`;
+      }
+      if (cardLink && esp.url) cardLink.href = esp.url;
+
+      if (lookupsEl) lookupsEl.innerText = esp.lookups || (isOnline ? '2,457' : 'Offline');
+      if (blockedEl) {
+        const count = esp.blocked_count || '829';
+        const pct = esp.blocked_percent || '33%';
+        blockedEl.innerText = isOnline ? `${count} (${pct})` : 'Offline';
+      }
+      if (blockingBadge) {
+        if (isOnline) {
+          blockingBadge.innerText = esp.blocking ? '● Blocking ON' : '○ Blocking OFF';
+          blockingBadge.className = `text-[9px] mt-0.5 font-semibold ${esp.blocking ? 'text-emerald-400' : 'text-amber-400'}`;
+        } else {
+          blockingBadge.innerText = '✕ Node Offline';
+          blockingBadge.className = 'text-[9px] mt-0.5 font-semibold text-rose-400';
+        }
+      }
+      if (devicesEl) devicesEl.innerText = isOnline ? `${esp.devices || 6} Active Devices` : '0 Devices';
+      if (domainsEl) domainsEl.innerText = esp.domains_on_lists || '208,814';
+      if (uptimeEl) uptimeEl.innerText = esp.uptime || '2h 53m';
+    }
+
+    // ----------------------------------------------------
+    // 4-Column Hardware Telemetry Cards & SVG Sparklines
+    // ----------------------------------------------------
+    function renderTelemetryCards() {
+      const t = AppState.telemetry;
+      if (!t) return;
+
+      // Card 1: CPU & Temp
+      const tempEl = document.getElementById('metric-temp');
+      const cpuPctEl = document.getElementById('metric-cpu-pct');
+      const cpuDescEl = document.getElementById('metric-cpu-load-desc');
+      if (tempEl && t.battery) tempEl.innerText = `${t.battery.temp_c || 26.5}°C`;
+      if (cpuPctEl && t.cpu) cpuPctEl.innerText = `${t.cpu.percent}%`;
+      if (cpuDescEl && t.cpu) cpuDescEl.innerText = `Load: ${t.cpu.load_1m || 1.14}, ${t.cpu.load_5m || 1.42}, ${t.cpu.load_15m || 1.68}`;
+
+      // Card 2: Memory
+      const memPctEl = document.getElementById('metric-mem-pct');
+      const memUsedEl = document.getElementById('metric-mem-used');
+      const memDescEl = document.getElementById('metric-mem-free-desc');
+      if (memPctEl && t.memory) memPctEl.innerText = `${t.memory.percent}%`;
+      if (memUsedEl && t.memory) memUsedEl.innerText = `${t.memory.used_mb} MiB`;
+      if (memDescEl && t.memory) memDescEl.innerText = `Free: ${t.memory.free_mb} MiB • Total: ${t.memory.total_mb} MiB`;
+
+      // Card 3: Leads
+      const pendingPillEl = document.getElementById('metric-pending-pill');
+      const totalScoutedEl = document.getElementById('metric-total-scouted');
+      if (pendingPillEl) pendingPillEl.innerText = `${AppState.jobs.length} Pending`;
+      if (totalScoutedEl) totalScoutedEl.innerText = `${AppState.allScouted.length} Leads`;
+
+      // Card 4: Fiverr
+      const unreadPillEl = document.getElementById('metric-unread-pill');
+      const fiverrCountEl = document.getElementById('metric-fiverr-count');
+      const unreadCount = AppState.fiverrInbox.filter(i => i.status === 'unread').length;
+      if (unreadPillEl) unreadPillEl.innerText = `${unreadCount} Unread`;
+      if (fiverrCountEl) fiverrCountEl.innerText = `${AppState.fiverrInbox.length} Messages`;
+
+      // Draw SVG Sparklines
+      const cpuHistory = t.cpu?.history || [20, 22, 25, 28, 30, 26, 32, 45, 42];
+      const memHistory = t.memory?.history || [55, 56, 56, 57, 58, 58, 59, 58];
+      drawSparkline('sparkline-cpu', cpuHistory, '#F59E0B', 'rgba(245, 158, 11, 0.15)');
+      drawSparkline('sparkline-mem', memHistory, '#A855F7', 'rgba(168, 85, 247, 0.15)');
+      drawSparkline('sparkline-leads', [1, 2, 2, 3, 3, 4, 4], '#06B6D4', 'rgba(6, 182, 212, 0.15)');
+      drawSparkline('sparkline-fiverr', [1, 1, 2, 3, 3, 4, 4], '#10B981', 'rgba(16, 185, 129, 0.15)');
+
+      // Node Connectivity Card Details
+      const batVal = document.getElementById('node-battery-val');
+      const batBar = document.getElementById('node-battery-bar');
+      if (batVal && t.battery) batVal.innerText = `${t.battery.percent}% (${t.battery.status || 'Charging'})`;
+      if (batBar && t.battery) batBar.style.width = `${t.battery.percent}%`;
+
+      const storVal = document.getElementById('node-storage-val');
+      const storBar = document.getElementById('node-storage-bar');
+      if (storVal && t.storage) storVal.innerText = `${t.storage.used_gb} GB / ${t.storage.total_gb} GB`;
+      if (storBar && t.storage) storBar.style.width = `${t.storage.percent}%`;
+
+      // Render Network Latency & ESP32 Uptime Pings
+      const pings = AppState.networkPings || (t && t.network_pings);
+      if (pings) {
+        const pingInt = document.getElementById('ping-internet-val');
+        const pingGw = document.getElementById('ping-gateway-val');
+        const pingEsp = document.getElementById('ping-esp32-val');
+        const mqttPill = document.getElementById('pings-mqtt-pill');
+
+        if (pingInt && pings.internet) {
+          pingInt.innerText = pings.internet.status === 'online' ? `${pings.internet.latency_ms} ms` : 'Offline';
+          pingInt.className = `text-xs font-bold mt-0.5 ${pings.internet.status === 'online' ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+        if (pingGw && pings.gateway) {
+          pingGw.innerText = pings.gateway.status === 'online' ? `${pings.gateway.latency_ms} ms` : 'Offline';
+          pingGw.className = `text-xs font-bold mt-0.5 ${pings.gateway.status === 'online' ? 'text-emerald-400' : 'text-rose-400'}`;
+        }
+        if (pingEsp && pings.esp32) {
+          pingEsp.innerText = pings.esp32.status === 'online' ? `${pings.esp32.latency_ms} ms` : 'Offline';
+          pingEsp.className = `text-xs font-bold mt-0.5 ${pings.esp32.status === 'online' ? 'text-cyan-400' : 'text-slate-500'}`;
+        }
+        if (mqttPill && pings.mqtt_broker) {
+          mqttPill.innerText = pings.mqtt_broker.status === 'online' ? 'MQTT :1883' : 'MQTT Off';
+          mqttPill.className = `text-[10px] font-mono px-2 py-0.5 rounded border ${pings.mqtt_broker.status === 'online' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25' : 'bg-slate-800 text-slate-500 border-borderSubtle'}`;
+        }
+      }
+    }
+
+    // Pure JS SVG Area Sparkline Renderer
+    function drawSparkline(elementId, data, strokeColor, fillColor) {
+      const svg = document.getElementById(elementId);
+      if (!svg || !data || data.length === 0) return;
+
+      const width = 100;
+      const height = 30;
+      const min = Math.min(...data);
+      const max = Math.max(...data);
+      const range = max === min ? 1 : max - min;
+
+      const points = data.map((val, idx) => {
+        const x = (idx / (data.length - 1)) * width;
+        const y = height - ((val - min) / range) * (height - 6) - 3;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      });
+
+      const linePath = `M ${points.join(' L ')}`;
+      const areaPath = `M 0,${height} L ${points.join(' L ')} L ${width},${height} Z`;
+
+      svg.innerHTML = `
+        <defs>
+          <linearGradient id="grad-${elementId}" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0.0"/>
+          </linearGradient>
+        </defs>
+        <path d="${areaPath}" fill="url(#grad-${elementId})" />
+        <path d="${linePath}" fill="none" stroke="${strokeColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      `;
+    }
+
+    // ----------------------------------------------------
+    // 3D STACKED SWIPE CARD DECK
+    // ----------------------------------------------------
+    function renderSwipeDeck() {
+      const container = document.getElementById('cardDeckContainer');
+      const emptyState = document.getElementById('deckEmptyState');
+      const counterEl = document.getElementById('deck-counter');
+      if (!container) return;
+
+      const jobs = AppState.jobs;
+
+      // Smart Empty State Check
+      if (!jobs || jobs.length === 0) {
+        container.innerHTML = '';
+        container.classList.add('hidden');
+        if (emptyState) emptyState.classList.remove('hidden');
+        if (counterEl) counterEl.innerText = '0 Pending Leads';
+        renderPastLeadsInEmptyState();
+        return;
+      }
+
+      container.classList.remove('hidden');
+      if (emptyState) emptyState.classList.add('hidden');
+
+      if (AppState.currentIndex >= jobs.length) {
+        AppState.currentIndex = 0;
+      }
+
+      if (counterEl) {
+        counterEl.innerText = `Lead ${AppState.currentIndex + 1} of ${jobs.length}`;
+      }
+
+      container.innerHTML = '';
+
+      // Render up to 3 cards in the visual 3D stack (Top + 2 Underneath)
+      const totalToRender = Math.min(3, jobs.length);
+      for (let i = totalToRender - 1; i >= 0; i--) {
+        const jobIndex = (AppState.currentIndex + i) % jobs.length;
+        const job = jobs[jobIndex];
+        const isTop = (i === 0);
+
+        const card = document.createElement('div');
+        card.className = `swipe-card absolute inset-x-0 top-0 bg-surface border border-borderSubtle rounded-2xl p-6 shadow-nodeCard`;
+        card.setAttribute('data-index', jobIndex);
+
+        // Visual stack depth transform
+        if (i === 0) {
+          card.style.zIndex = 30;
+          card.style.transform = 'translate3d(0, 0, 0) scale(1)';
+          card.style.opacity = '1';
+          card.classList.add('shadow-deckTop');
+          initCardGestures(card, job);
+        } else if (i === 1) {
+          card.style.zIndex = 20;
+          card.style.transform = 'translate3d(0, 14px, 0) scale(0.96)';
+          card.style.opacity = '0.7';
+          card.style.pointerEvents = 'none';
+        } else if (i === 2) {
+          card.style.zIndex = 10;
+          card.style.transform = 'translate3d(0, 28px, 0) scale(0.92)';
+          card.style.opacity = '0.4';
+          card.style.pointerEvents = 'none';
+        }
+
+        // Keywords Chips
+        const keywordsHtml = (job.matched_keywords || []).map(kw => `
+          <span class="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 font-mono text-[11px] font-semibold">${kw}</span>
+        `).join('');
+
+        // Required Skills Chips
+        const skillsHtml = (job.skills || []).slice(0, 4).map(sk => `
+          <span class="px-2 py-0.5 rounded-md bg-slate-800 border border-borderSubtle text-slate-300 font-sans text-[11px]">${sk}</span>
+        `).join('');
+
+        card.innerHTML = `
+          <!-- Card Header & Budget Pill -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-borderSubtle">
+            <div class="space-y-1">
+              <div class="flex items-center space-x-2">
+                <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono text-[10px] font-bold uppercase tracking-wider">PCB / Hardware Match</span>
+                <span class="text-[11px] font-mono text-slate-400">#${job.project_id}</span>
+              </div>
+              <h4 class="text-lg font-heading font-bold text-white tracking-tight leading-snug">${escapeHtml(job.title)}</h4>
+            </div>
+            
+            <div class="flex items-center space-x-2 shrink-0">
+              <div class="px-3.5 py-1.5 rounded-xl bg-[#0D1015] border border-emerald-500/30 text-emerald-300 font-mono font-bold text-sm shadow-sm">
+                ${job.budget_display || '$30 - $100 USD'}
+              </div>
+              <a href="${job.url}" target="_blank" title="View on Freelancer" class="p-2 rounded-xl bg-surfaceHover hover:bg-surfaceActive border border-borderSubtle text-slate-300 hover:text-white transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <!-- Matched Hardware Keywords & Skills -->
+          <div class="py-3 flex flex-wrap gap-1.5">
+            ${keywordsHtml}
+            ${skillsHtml}
+          </div>
+
+          <!-- Description Box with Accordion -->
+          <div class="py-3 text-xs text-slate-300 font-sans leading-relaxed">
+            <p id="desc-text-${job.project_id}" class="line-clamp-3">${escapeHtml(job.description)}</p>
+            <button onclick="toggleDescription(${job.project_id})" id="desc-btn-${job.project_id}" class="mt-1 text-[11px] font-mono text-cyan-400 hover:underline">Read full description</button>
+          </div>
+
+          <!-- Swipe Action Trigger Controls -->
+          <div class="pt-5 mt-2 border-t border-borderSubtle flex items-center justify-between gap-3">
+            <button onclick="declineTopCard()" class="flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl bg-surfaceHover hover:bg-rose-950/40 border border-borderSubtle hover:border-rose-500/40 text-slate-300 hover:text-rose-300 font-heading font-semibold text-xs transition-all active:scale-95">
+              <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+              <span>Decline (←)</span>
+            </button>
+
+            <button onclick="openBidDrawerForJob(${jobIndex})" class="flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-heading font-semibold text-xs tracking-wide shadow-glowEmerald transition-all active:scale-95">
+              <span>Accept & Configure Bid (→)</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+              </svg>
+            </button>
+          </div>
+        `;
+
+        container.appendChild(card);
+      }
+    }
+
+    // Gesture / Drag Handler for Top Card
+    function initCardGestures(card, job) {
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let currentX = 0;
+      let currentY = 0;
+
+      const onStart = (e) => {
+        if (e.target.closest('button') || e.target.closest('a')) return;
+        isDragging = true;
+        card.classList.add('dragging');
+        startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+      };
+
+      const onMove = (e) => {
+        if (!isDragging) return;
+        const x = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const y = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        currentX = x - startX;
+        currentY = y - startY;
+
+        // Prevent vertical scroll interference during horizontal card swipe on mobile
+        if (Math.abs(currentX) > 10 && Math.abs(currentX) > Math.abs(currentY) && e.cancelable) {
+          e.preventDefault();
+        }
+
+        const rotate = currentX * 0.08;
+        card.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) rotate(${rotate}deg)`;
+
+        // Visual feedback border
+        if (currentX > 60) {
+          card.style.borderColor = 'rgba(16, 185, 129, 0.6)';
+        } else if (currentX < -60) {
+          card.style.borderColor = 'rgba(244, 63, 94, 0.6)';
+        } else {
+          card.style.borderColor = 'rgba(255, 255, 255, 0.07)';
+        }
+      };
+
+      const onEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        card.classList.remove('dragging');
+
+        // Threshold check: 100px swipe
+        if (currentX > 100) {
+          acceptTopCard();
+        } else if (currentX < -100) {
+          declineTopCard();
+        } else {
+          // Snap back
+          card.style.transform = 'translate3d(0, 0, 0) scale(1)';
+          card.style.borderColor = 'rgba(255, 255, 255, 0.07)';
+        }
+      };
+
+      card.addEventListener('mousedown', onStart);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+
+      card.addEventListener('touchstart', onStart, { passive: true });
+      window.addEventListener('touchmove', onMove, { passive: false });
+      window.addEventListener('touchend', onEnd);
+    }
+
+    // Toggle description length
+    function toggleDescription(projectId) {
+      const p = document.getElementById(`desc-text-${projectId}`);
+      const btn = document.getElementById(`desc-btn-${projectId}`);
+      if (!p || !btn) return;
+
+      if (p.classList.contains('line-clamp-3')) {
+        p.classList.remove('line-clamp-3');
+        btn.innerText = 'Collapse description';
+      } else {
+        p.classList.add('line-clamp-3');
+        btn.innerText = 'Read full description';
+      }
+    }
+
+    // Decline / Dismiss Action
+    async function declineTopCard() {
+      const jobs = AppState.jobs;
+      if (!jobs || jobs.length === 0) return;
+
+      const topCard = document.querySelector('.swipe-card[data-index]');
+      const job = jobs[AppState.currentIndex];
+
+      if (topCard) topCard.classList.add('swiped-left');
+
+      setTimeout(async () => {
+        try {
+          const resp = await fetch(`${AppState.apiBase}/api/dismiss`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Auth-Pin': AppState.pin
+            },
+            body: JSON.stringify({ project_id: job.project_id })
+          });
+
+          // Optimistically mark as dismissed locally
+          job.bid_status = 'dismissed';
+          AppState.jobs = AppState.jobs.filter(j => j.project_id !== job.project_id);
+
+          showToast(`Declined Project #${job.project_id}`, 'info');
+          renderSwipeDeck();
+          renderJobsQueueTable();
+        } catch (e) {
+          showToast(`Dismiss error: ${e.message}`, 'error');
+        }
+      }, 200);
+    }
+
+    // Accept / Open Bid Drawer Action
+    function acceptTopCard() {
+      const jobs = AppState.jobs;
+      if (!jobs || jobs.length === 0) return;
+      openBidDrawerForJob(AppState.currentIndex);
+    }
+
+    function openBidDrawerForJob(jobIndex) {
+      const job = AppState.jobs[jobIndex] || AppState.allScouted.find(j => j.project_id === jobIndex);
+      if (!job) return;
+
+      AppState.activeJobForBid = job;
+
+      document.getElementById('bidModalTitle').innerText = job.title;
+      document.getElementById('bidModalBudget').innerText = job.budget_display || '$30 - $100 USD';
+
+      // Default Bid Amount: either $30 or minimum budget
+      const defaultAmount = Math.max(30, job.min_budget || 30);
+      document.getElementById('bidInputAmount').value = defaultAmount;
+      document.getElementById('bidInputPeriod').value = 3;
+      document.getElementById('bidInputPitch').value = DEFAULT_PITCH;
+
+      document.getElementById('bidDrawerOverlay').classList.remove('hidden');
+    }
+
+    function closeBidDrawer() {
+      document.getElementById('bidDrawerOverlay').classList.add('hidden');
+      AppState.activeJobForBid = null;
+    }
+
+    function adjustBid(delta) {
+      const input = document.getElementById('bidInputAmount');
+      if (input) {
+        input.value = Math.max(10, (parseFloat(input.value) || 30) + delta);
+      }
+    }
+
+    async function submitBidNow() {
+      const job = AppState.activeJobForBid;
+      if (!job) return;
+
+      const amount = parseFloat(document.getElementById('bidInputAmount').value);
+      const period = parseInt(document.getElementById('bidInputPeriod').value) || 3;
+      const description = document.getElementById('bidInputPitch').value.trim();
+
+      if (!amount || !description) {
+        showToast('Please provide an amount and description pitch', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btnSubmitBid');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Submitting to Freelancer API...';
+      }
+
+      try {
+        const resp = await fetch(`${AppState.apiBase}/api/bid`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth-Pin': AppState.pin
+          },
+          body: JSON.stringify({
+            project_id: job.project_id,
+            amount,
+            period,
+            description
+          })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || 'Bid rejected');
+
+        // Mark as bid_sent
+        job.bid_status = 'bid_sent';
+        AppState.jobs = AppState.jobs.filter(j => j.project_id !== job.project_id);
+
+        closeBidDrawer();
+        showToast(`Bid Placed on #${job.project_id}! ($${amount})`, 'success');
+
+        renderSwipeDeck();
+        renderJobsQueueTable();
+        fetchState(true);
+
+      } catch (err) {
+        showToast(`Bid failed: ${err.message}`, 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+            </svg>
+            <span>Submit Bid to Freelancer API</span>
+          `;
+        }
+      }
+    }
+
+    // Reopen dismissed job into pending queue
+    async function reopenJob(projectId) {
+      try {
+        const resp = await fetch(`${AppState.apiBase}/api/reopen`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Auth-Pin': AppState.pin
+          },
+          body: JSON.stringify({ project_id: projectId })
+        });
+
+        if (!resp.ok) throw new Error('Failed to reopen');
+
+        // Find job in allScouted and set to pending
+        const j = AppState.allScouted.find(item => item.project_id === projectId);
+        if (j) {
+          j.bid_status = 'pending';
+          if (!AppState.jobs.some(item => item.project_id === projectId)) {
+            AppState.jobs.unshift(j);
+          }
+        }
+
+        showToast(`Restored #${projectId} to active swipe queue!`, 'success');
+        renderSwipeDeck();
+        renderJobsQueueTable();
+      } catch (e) {
+        showToast(`Reopen error: ${e.message}`, 'error');
+      }
+    }
+
+    // Force scan trigger
+    async function triggerScanNow() {
+      const btn = document.getElementById('btn-force-scan');
+      const icon = document.getElementById('icon-scan');
+      if (icon) icon.classList.add('animate-spin');
+
+      try {
+        const resp = await fetch(`${AppState.apiBase}/api/scan`, {
+          method: 'POST',
+          headers: { 'X-Auth-Pin': AppState.pin }
+        });
+        showToast('J5 Hardware Scout poll initiated!', 'success');
+        setTimeout(() => fetchState(true), 3000);
+      } catch (e) {
+        showToast(`Scan error: ${e.message}`, 'error');
+      } finally {
+        if (icon) icon.classList.remove('animate-spin');
+      }
+    }
+
+    // Render Past Leads in Empty State
+    function renderPastLeadsInEmptyState() {
+      const container = document.getElementById('past-leads-container');
+      if (!container) return;
+
+      const past = AppState.allScouted;
+      if (!past || past.length === 0) {
+        container.innerHTML = `<div class="text-xs text-slate-500 font-mono">No past leads in database.</div>`;
+        return;
+      }
+
+      container.innerHTML = past.map(job => {
+        const isBid = job.bid_status === 'bid_sent';
+        const badgeColor = isBid ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/25' : 'bg-slate-800 text-slate-400 border-borderSubtle';
+        const statusLabel = isBid ? 'Bid Sent' : 'Dismissed';
+
+        return `
+          <div class="flex items-center justify-between p-3 rounded-xl bg-[#0D1015] border border-borderSubtle hover:border-slate-700 transition-colors">
+            <div class="space-y-0.5 truncate mr-3">
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-mono font-bold text-white truncate max-w-xs">${escapeHtml(job.title)}</span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full border ${badgeColor}">${statusLabel}</span>
+              </div>
+              <div class="text-[11px] font-mono text-emerald-400 font-medium">${job.budget_display || '$30 - $100 USD'}</div>
+            </div>
+            
+            <div class="flex items-center space-x-2 shrink-0">
+              <button onclick="reopenJob(${job.project_id})" class="px-3 py-1.5 rounded-lg bg-surfaceHover hover:bg-emerald-950/40 border border-borderSubtle hover:border-emerald-500/40 text-slate-200 hover:text-emerald-300 font-mono text-xs font-semibold transition-all">
+                Re-open to Bid Deck
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ----------------------------------------------------
+    // Freelancer Queue Table View
+    // ----------------------------------------------------
+    function renderJobsQueueTable() {
+      const tbody = document.getElementById('queue-table-body');
+      if (!tbody) return;
+
+      const q = (document.getElementById('search-jobs')?.value || '').toLowerCase();
+      let jobs = AppState.allScouted;
+
+      if (q) {
+        jobs = jobs.filter(j => 
+          j.title.toLowerCase().includes(q) || 
+          j.description.toLowerCase().includes(q) ||
+          (j.matched_keywords || []).some(k => k.toLowerCase().includes(q))
+        );
+      }
+
+      if (jobs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500 font-mono">No matching hardware leads found.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = jobs.map(j => {
+        const isPending = j.bid_status === 'pending';
+        const isBid = j.bid_status === 'bid_sent';
+
+        let badge = `<span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-mono">Dismissed</span>`;
+        if (isPending) badge = `<span class="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/25 text-[10px] font-mono font-bold">Pending</span>`;
+        if (isBid) badge = `<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-[10px] font-mono font-bold">Bid Sent</span>`;
+
+        const kwHtml = (j.matched_keywords || []).slice(0, 3).map(k => `
+          <span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono text-[10px]">${k}</span>
+        `).join('');
+
+        return `
+          <tr class="hover:bg-surfaceHover/50 transition-colors">
+            <td class="p-3">
+              <a href="${j.url}" target="_blank" class="font-heading font-semibold text-white hover:text-emerald-400 transition-colors line-clamp-1">${escapeHtml(j.title)}</a>
+              <div class="text-[10px] font-mono text-slate-500">ID: #${j.project_id}</div>
+            </td>
+            <td class="p-3 font-mono font-bold text-emerald-400">${j.budget_display || '$30 - $100 USD'}</td>
+            <td class="p-3"><div class="flex flex-wrap gap-1">${kwHtml}</div></td>
+            <td class="p-3">${badge}</td>
+            <td class="p-3 text-right">
+              ${isPending ? `
+                <button onclick="openBidDrawerForJob(${j.project_id})" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-semibold">Configure Bid</button>
+              ` : `
+                <button onclick="reopenJob(${j.project_id})" class="px-2.5 py-1 rounded-lg bg-surfaceHover hover:bg-surfaceActive border border-borderSubtle text-slate-300 hover:text-white font-mono text-xs">Re-open</button>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ----------------------------------------------------
+    // Fiverr Live Inbox View
+    // ----------------------------------------------------
+    function renderFiverrInbox() {
+      const container = document.getElementById('fiverr-inbox-list');
+      if (!container) return;
+
+      const inbox = AppState.fiverrInbox;
+      if (!inbox || inbox.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center bg-surface border border-borderSubtle rounded-2xl text-slate-500 font-mono">No new Fiverr inquiries. IMAP listener active.</div>`;
+        return;
+      }
+
+      container.innerHTML = inbox.map(msg => {
+        const isUnread = msg.status === 'unread';
+
+        return `
+          <div class="bg-surface border ${isUnread ? 'border-violet-500/40 shadow-glowViolet' : 'border-borderSubtle'} rounded-2xl p-5 transition-all">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-borderSubtle">
+              <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-violet-500/20 text-violet-300 font-mono font-bold flex items-center justify-center text-sm border border-violet-500/30">
+                  ${msg.sender.substring(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <div class="flex items-center space-x-2">
+                    <span class="font-heading font-bold text-white text-sm">@${escapeHtml(msg.sender)}</span>
+                    <span class="px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-300 font-mono text-[10px] font-semibold">${msg.inquiry_type || 'New Message'}</span>
+                  </div>
+                  <div class="text-[11px] font-mono text-slate-400">${escapeHtml(msg.subject)}</div>
+                </div>
+              </div>
+              <div class="text-right font-mono text-[11px] text-slate-500">
+                ${msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : 'Just now'}
+              </div>
+            </div>
+
+            <div class="py-3 text-xs text-slate-300 font-sans leading-relaxed">
+              ${escapeHtml(msg.snippet)}
+            </div>
+
+            <div class="pt-3 border-t border-borderSubtle flex items-center justify-between">
+              <span class="text-[11px] font-mono text-slate-500">IMAP Verified</span>
+              <div class="flex items-center space-x-2">
+                ${isUnread ? `
+                  <button onclick="markFiverrRead('${msg.id}')" class="px-3 py-1.5 rounded-xl bg-surfaceHover hover:bg-surfaceActive border border-borderSubtle text-slate-300 text-xs font-mono">Mark Read</button>
+                ` : ''}
+                <button onclick="deleteFiverrInquiry('${msg.id}')" title="Delete Inquiry" class="p-2 rounded-xl bg-surfaceHover hover:bg-rose-950/40 border border-borderSubtle hover:border-rose-500/40 text-slate-400 hover:text-rose-400 transition-colors">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+                <a href="${msg.fiverr_link}" target="_blank" class="flex items-center space-x-1.5 px-4 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-heading font-semibold text-xs tracking-wide shadow-glowViolet transition-all">
+                  <span>Direct Reply</span>
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function markFiverrRead(id) {
+      try {
+        await fetch(`${AppState.apiBase}/api/fiverr/read`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const item = AppState.fiverrInbox.find(i => i.id === id);
+        if (item) item.status = 'read';
+        renderFiverrInbox();
+        renderTopHeader();
+      } catch (e) {
+        showToast(`Failed: ${e.message}`, 'error');
+      }
+    }
+
+    async function deleteFiverrInquiry(id) {
+      try {
+        await fetch(`${AppState.apiBase}/api/fiverr/delete`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Auth-Pin': AppState.pin
+          },
+          body: JSON.stringify({ id })
+        });
+        AppState.fiverrInbox = AppState.fiverrInbox.filter(item => String(item.id) !== String(id));
+        renderFiverrInbox();
+        renderTopHeader();
+        showToast('Inquiry deleted from inbox', 'info');
+      } catch (e) {
+        showToast(`Delete failed: ${e.message}`, 'error');
+      }
+    }
+
+    async function clearAllFiverr() {
+      if (!confirm('Clear all Fiverr inquiries from the inbox?')) return;
+      try {
+        await fetch(`${AppState.apiBase}/api/fiverr/delete`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Auth-Pin': AppState.pin
+          },
+          body: JSON.stringify({ all: true })
+        });
+        AppState.fiverrInbox = [];
+        renderFiverrInbox();
+        renderTopHeader();
+        showToast('All Fiverr messages cleared', 'info');
+      } catch (e) {
+        showToast(`Clear failed: ${e.message}`, 'error');
+      }
+    }
+
+    // ----------------------------------------------------
+    // Keywords Cloud
+    // ----------------------------------------------------
+    function renderKeywordsCloud() {
+      const targetContainer = document.getElementById('target-keywords-list');
+      const blacklistContainer = document.getElementById('blacklist-keywords-list');
+      const stats = AppState.stats;
+
+      if (targetContainer && stats.target_keywords) {
+        targetContainer.innerHTML = stats.target_keywords.map(kw => `
+          <span class="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-mono text-[10px] font-medium">${kw}</span>
+        `).join('');
+      }
+
+      if (blacklistContainer && stats.blacklist_keywords) {
+        blacklistContainer.innerHTML = stats.blacklist_keywords.map(kw => `
+          <span class="px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-300 font-mono text-[10px] font-medium">${kw}</span>
+        `).join('');
+      }
+    }
+
+    // ----------------------------------------------------
+    // Console Logs Formatter
+    // ----------------------------------------------------
+    function renderConsoleLogs() {
+      const miniConsole = document.getElementById('mini-console-content');
+      const fullConsole = document.getElementById('full-console-content');
+      const logs = AppState.logs || [];
+
+      const formattedHtml = logs.map(line => {
+        let cls = 'text-slate-400';
+        if (line.includes('[INFO]')) cls = 'log-info';
+        if (line.includes('MATCH FOUND') || line.includes('BID PLACED') || line.includes('[SUCCESS]')) cls = 'log-success';
+        if (line.includes('[WARN]')) cls = 'log-warn';
+        if (line.includes('[ERROR]') || line.includes('REJECTED')) cls = 'log-error';
+        if (line.includes('[IMAP]') || line.includes('[FIVERR]')) cls = 'log-purple';
+
+        return `<div class="${cls}"><span class="log-time">${escapeHtml(line)}</span></div>`;
+      }).join('');
+
+      if (miniConsole) {
+        miniConsole.innerHTML = formattedHtml || `<div class="text-slate-500">// No logs recorded yet</div>`;
+        miniConsole.scrollTop = miniConsole.scrollHeight;
+      }
+      if (fullConsole) {
+        fullConsole.innerHTML = formattedHtml || `<div class="text-slate-500">// No logs recorded yet</div>`;
+        fullConsole.scrollTop = fullConsole.scrollHeight;
+      }
+    }
+
+    function copyLogs() {
+      const text = (AppState.logs || []).join('\n');
+      navigator.clipboard.writeText(text);
+      showToast('Console logs copied to clipboard', 'info');
+    }
+
+    function clearConsoleView() {
+      const miniConsole = document.getElementById('mini-console-content');
+      const fullConsole = document.getElementById('full-console-content');
+      if (miniConsole) miniConsole.innerHTML = '<div class="text-slate-500">// Cleared</div>';
+      if (fullConsole) fullConsole.innerHTML = '<div class="text-slate-500">// Cleared</div>';
+    }
+
+    // ----------------------------------------------------
+    // View Switcher (Homelab Node Tree Navigation)
+    // ----------------------------------------------------
+    function switchView(viewName) {
+      AppState.activeView = viewName;
+
+      // Update Desktop Nav Buttons
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.remove('bg-surface', 'text-white', 'shadow-sm', 'border', 'border-borderSubtle');
+        btn.classList.add('text-slate-400');
+      });
+
+      const activeNav = document.getElementById(`nav-${viewName}`);
+      if (activeNav) {
+        activeNav.classList.remove('text-slate-400');
+        activeNav.classList.add('bg-surface', 'text-white', 'shadow-sm', 'border', 'border-borderSubtle');
+      }
+
+      // Update Mobile Bottom Nav Buttons
+      document.querySelectorAll('.mob-nav-item').forEach(btn => {
+        btn.classList.remove('text-emerald-400');
+        btn.classList.add('text-slate-400');
+      });
+      const activeMobNav = document.getElementById(`mob-nav-${viewName}`);
+      if (activeMobNav) {
+        activeMobNav.classList.remove('text-slate-400');
+        activeMobNav.classList.add('text-emerald-400');
+      }
+
+      // Toggle Panels
+      document.querySelectorAll('.view-panel').forEach(panel => {
+        panel.classList.add('hidden');
+      });
+
+      const targetPanel = document.getElementById(`view-${viewName}`);
+      if (targetPanel) {
+        targetPanel.classList.remove('hidden');
+      }
+
+      // On mobile, close slide-over sidebar drawer
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar && window.innerWidth < 1024) {
+        sidebar.classList.add('-translate-x-full');
+      }
+    }
+
+    // ----------------------------------------------------
+    // Utility Helpers
+    // ----------------------------------------------------
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text);
+      showToast(`Copied ${text}`, 'info');
+    }
+
+    function copyTunnelUrl() {
+      const link = document.getElementById('node-tunnel-url');
+      if (link && link.href) {
+        copyToClipboard(link.href);
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      let border = 'border-slate-700 text-slate-200';
+      if (type === 'success') border = 'border-emerald-500/50 text-emerald-300';
+      if (type === 'error') border = 'border-rose-500/50 text-rose-300';
+
+      toast.className = `pointer-events-auto px-4 py-2.5 rounded-xl bg-[#141820] border ${border} font-mono text-xs shadow-2xl flex items-center space-x-2 transition-all transform duration-300 translate-y-2 opacity-0`;
+      toast.innerHTML = `
+        <span class="w-2 h-2 rounded-full ${type === 'success' ? 'bg-emerald-400' : type === 'error' ? 'bg-rose-400' : 'bg-cyan-400'}"></span>
+        <span>${escapeHtml(message)}</span>
+      `;
+
+      container.appendChild(toast);
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# Secrets & Private Environment
+.env
+.env.local
+*.log
+*.pid
+seen_*.json
+esp32_watchdog_state.json
+tunnel_url.txt
+
+# OS & Node
+node_modules/
+.vercel/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
