@@ -94,14 +94,24 @@
     }
 
     /* Touch-Action & Tactile Response Optimization */
-    button, a, input, select, textarea, [role="button"], .interactive-card, .tab-btn, .mobile-tab-btn {
+    html, body, button, a, input, select, textarea, [role="button"], .interactive-card, .tab-btn, .mobile-tab-btn, [onclick] {
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
+    }
+
+    button, a, .tab-btn, .mobile-tab-btn, .interactive-card {
       transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     }
 
     /* 60fps hardware accelerated scrolling */
-    .smooth-scroll-container {
+    .smooth-scroll-container,
+    #applied-jobs-container,
+    #confirmation-jobs-container,
+    #contests-container,
+    #fl-messages-container,
+    #fiverr-inbox-container,
+    #terminal-container,
+    main {
       will-change: transform;
       -webkit-overflow-scrolling: touch;
       contain: content;
@@ -771,40 +781,50 @@
   <!-- ============================================================ -->
   <!-- FLOATING LIQUID GLASS MOBILE BOTTOM NAV                      -->
   <!-- ============================================================ -->
-  <nav id="mobile-liquid-glass-nav" class="md:hidden liquid-glass-nav select-none">
+  <nav id="mobile-liquid-glass-nav"
+       class="md:hidden liquid-glass-nav select-none"
+       style="position: fixed; bottom: 16px; left: 16px; width: calc(100% - 32px); max-width: 480px; margin: 0 auto; right: 16px; height: 64px; border-radius: 24px; z-index: 100; background: rgba(15, 15, 15, 0.45); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: space-around; padding: 0 8px;">
     
     <!-- View 1: Dashboard -->
-    <button onclick="switchView('dashboard')" id="mobile-nav-dashboard" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-2xl text-[#10B981] bg-[#10B981]/10 cursor-pointer relative transition-all duration-200 active:scale-95 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.3)]">
-      <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <button onclick="switchView('dashboard')" id="mobile-nav-dashboard"
+            class="mobile-tab-btn flex-1 flex flex-col items-center justify-center py-2 px-2 rounded-2xl text-[#10B981] bg-[#10B981]/15 cursor-pointer relative transition-all duration-200 active:scale-95 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.3)]"
+            title="Dashboard" aria-label="Dashboard">
+      <svg class="w-6 h-6 transition-all duration-200" style="filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.5));" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
       </svg>
-      <span class="text-[10px] font-semibold font-heading tracking-tight mt-0.5">Dashboard</span>
+      <span class="text-[9px] font-semibold font-heading tracking-tight mt-0.5">Dashboard</span>
     </button>
 
     <!-- View 2: Freelancer Hub -->
-    <button onclick="switchView('freelancer')" id="mobile-nav-freelancer" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95">
-      <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <button onclick="switchView('freelancer')" id="mobile-nav-freelancer"
+            class="mobile-tab-btn flex-1 flex flex-col items-center justify-center py-2 px-2 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95"
+            title="Freelancer Hub" aria-label="Freelancer Hub">
+      <svg class="w-6 h-6 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
       </svg>
-      <span class="text-[10px] font-medium font-heading tracking-tight mt-0.5">Freelancer</span>
+      <span class="text-[9px] font-medium font-heading tracking-tight mt-0.5">Freelancer</span>
       <span id="mobile-confirm-badge" class="absolute top-1 right-2 min-w-[16px] h-4 px-1 rounded-full bg-nodeAmber text-obsidian text-[9px] font-mono font-bold flex items-center justify-center shadow-sm hidden">0</span>
     </button>
 
     <!-- View 3: Fiverr Messages -->
-    <button onclick="switchView('fiverr')" id="mobile-nav-fiverr" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95">
-      <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <button onclick="switchView('fiverr')" id="mobile-nav-fiverr"
+            class="mobile-tab-btn flex-1 flex flex-col items-center justify-center py-2 px-2 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95"
+            title="Fiverr Messages" aria-label="Fiverr Messages">
+      <svg class="w-6 h-6 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
       </svg>
-      <span class="text-[10px] font-medium font-heading tracking-tight mt-0.5">Fiverr</span>
+      <span class="text-[9px] font-medium font-heading tracking-tight mt-0.5">Fiverr</span>
       <span id="mobile-fiverr-badge" class="absolute top-1 right-2 min-w-[16px] h-4 px-1 rounded-full bg-nodeViolet text-white text-[9px] font-mono font-bold flex items-center justify-center shadow-sm hidden">0</span>
     </button>
 
     <!-- View 4: Live Terminal -->
-    <button onclick="switchView('terminal')" id="mobile-nav-terminal" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95">
-      <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <button onclick="switchView('terminal')" id="mobile-nav-terminal"
+            class="mobile-tab-btn flex-1 flex flex-col items-center justify-center py-2 px-2 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95"
+            title="Live Terminal" aria-label="Live Terminal">
+      <svg class="w-6 h-6 transition-all duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
       </svg>
-      <span class="text-[10px] font-medium font-heading tracking-tight mt-0.5">Terminal</span>
+      <span class="text-[9px] font-medium font-heading tracking-tight mt-0.5">Terminal</span>
     </button>
   </nav>
 
@@ -945,7 +965,9 @@
             sideBtn.className = 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-white bg-surfaceActive border border-borderMuted';
           }
           if (mobBtn) {
-            mobBtn.className = 'mobile-tab-btn flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-2xl text-[#10B981] bg-[#10B981]/10 cursor-pointer relative transition-all duration-200 active:scale-95 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.3)]';
+            mobBtn.className = 'mobile-tab-btn flex-1 flex flex-col items-center justify-center py-2 px-2 rounded-2xl text-[#10B981] bg-[#10B981]/15 cursor-pointer relative transition-all duration-200 active:scale-95 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.3)]';
+            const iconSvg = mobBtn.querySelector('svg');
+            if (iconSvg) iconSvg.style.filter = 'drop-shadow(0 0 6px rgba(16, 185, 129, 0.5))';
           }
         } else {
           if (sec) {
@@ -956,7 +978,9 @@
             sideBtn.className = 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-slate-400 hover:text-white hover:bg-surfaceHover';
           }
           if (mobBtn) {
-            mobBtn.className = 'mobile-tab-btn flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95';
+            mobBtn.className = 'mobile-tab-btn flex-1 flex flex-col items-center justify-center py-2 px-2 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95';
+            const iconSvg = mobBtn.querySelector('svg');
+            if (iconSvg) iconSvg.style.filter = 'none';
           }
         }
       });
@@ -1053,6 +1077,16 @@
       if (!data) return;
       AppState.stateData = data;
 
+      // Root-level Fast Short-Circuit: If whole payload is byte-for-byte identical, 0 DOM operations!
+      let rawJson = '';
+      try {
+        rawJson = JSON.stringify(data);
+        if (RenderCache.rawState && rawJson === RenderCache.rawState) {
+          return; // Ultra-fast 0ms short circuit!
+        }
+        RenderCache.rawState = rawJson;
+      } catch (e) {}
+
       // 1. Update Tunnel pill (only if changed)
       if (data.tunnel_url && data.tunnel_url !== RenderCache.tunnelUrl) {
         RenderCache.tunnelUrl = data.tunnel_url;
@@ -1080,7 +1114,7 @@
         const msgs = Array.isArray(data.freelancer_messages) ? data.freelancer_messages : [];
         const contests = Array.isArray(data.contests) ? data.contests : [];
 
-        // Always update badge counts cleanly
+        // Always update badge counts cleanly (safeSetText prevents DOM mutation if identical)
         safeSetText('tab-count-applied', applied.length);
         safeSetText('tab-count-confirmation', confirm.length);
         safeSetText('tab-count-contests', contests.length);
@@ -1089,8 +1123,8 @@
         const sideBadge = document.getElementById('sidebar-confirm-badge');
         const mobBadge = document.getElementById('mobile-confirm-badge');
         if (confirm.length > 0) {
-          if (sideBadge) { sideBadge.textContent = confirm.length; sideBadge.classList.remove('hidden'); }
-          if (mobBadge) { mobBadge.textContent = confirm.length; mobBadge.classList.remove('hidden'); }
+          if (sideBadge) { safeSetText('sidebar-confirm-badge', confirm.length); sideBadge.classList.remove('hidden'); }
+          if (mobBadge) { safeSetText('mobile-confirm-badge', confirm.length); mobBadge.classList.remove('hidden'); }
         } else {
           if (sideBadge) sideBadge.classList.add('hidden');
           if (mobBadge) mobBadge.classList.add('hidden');
@@ -1123,8 +1157,8 @@
         const sideFiverrBadge = document.getElementById('sidebar-fiverr-badge');
         const mobFiverrBadge = document.getElementById('mobile-fiverr-badge');
         if (fiverr.length > 0) {
-          if (sideFiverrBadge) { sideFiverrBadge.textContent = fiverr.length; sideFiverrBadge.classList.remove('hidden'); }
-          if (mobFiverrBadge) { mobFiverrBadge.textContent = fiverr.length; mobFiverrBadge.classList.remove('hidden'); }
+          if (sideFiverrBadge) { safeSetText('sidebar-fiverr-badge', fiverr.length); sideFiverrBadge.classList.remove('hidden'); }
+          if (mobFiverrBadge) { safeSetText('mobile-fiverr-badge', fiverr.length); mobFiverrBadge.classList.remove('hidden'); }
         } else {
           if (sideFiverrBadge) sideFiverrBadge.classList.add('hidden');
           if (mobFiverrBadge) mobFiverrBadge.classList.add('hidden');
