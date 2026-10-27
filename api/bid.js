@@ -1,8 +1,9 @@
 // Vercel Serverless Function: POST /api/bid
 export default async function handler(req, res) {
+  // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Auth-Pin, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Auth-Pin, X-Tunnel-Url, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
@@ -27,12 +28,34 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields: project_id, amount, description' });
   }
 
-  const token = process.env.FREELANCER_OAUTH_TOKEN;
-  const userId = process.env.FREELANCER_USER_ID;
+  const overrideTunnel = req.headers['x-tunnel-url'] || req.query?.tunnel_url;
+  const j5Url = (overrideTunnel && String(overrideTunnel).trim()) || process.env.J5_TUNNEL_URL || 'https://subsequently-skip-breath-pizza.trycloudflare.com';
 
-  if (!token || !userId) {
-    return res.status(500).json({ error: 'FREELANCER_OAUTH_TOKEN and FREELANCER_USER_ID environment variables must be configured' });
+  // Attempt proxy to J5 tunnel first so state, logs, and matched_jobs.json are synchronized
+  if (j5Url) {
+    try {
+      const j5Resp = await fetch(`${j5Url.replace(/\/$/, '')}/api/bid`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Auth-Pin': configuredPin,
+        },
+        body: JSON.stringify(body),
+      });
+      if (j5Resp.ok) {
+        const j5Data = await j5Resp.json();
+        return res.status(200).json({
+          ...j5Data,
+          source: 'j5_device_tunnel',
+        });
+      }
+    } catch (e) {
+      // fallback to direct Freelancer API submission
+    }
   }
+
+  const token = process.env.FREELANCER_OAUTH_TOKEN || 'YOUR_OAUTH_TOKEN_HERE';
+  const userId = process.env.FREELANCER_USER_ID || 'YOUR_USER_ID';
 
   const bidPayload = {
     project_id: Number(project_id),
@@ -49,7 +72,7 @@ export default async function handler(req, res) {
       headers: {
         'freelancer-oauth-v1': token,
         'Content-Type': 'application/json',
-        'User-Agent': 'HomelabCommandCenter/1.0',
+        'User-Agent': 'FreelancerCommandCenter/4.0',
       },
       body: JSON.stringify(bidPayload),
     });
@@ -59,6 +82,7 @@ export default async function handler(req, res) {
     if (!flRes.ok) {
       return res.status(flRes.status).json({
         error: 'Freelancer API rejected bid',
+        code: flRes.status,
         details: data,
       });
     }
@@ -69,6 +93,6 @@ export default async function handler(req, res) {
       result: data,
     });
   } catch (err) {
-    return res.status(500).json({ error: `Internal error placing bid: ${err.message}` });
+    return res.status(500).json({ error: `Internal bid submission failure: ${err.message}` });
   }
 }

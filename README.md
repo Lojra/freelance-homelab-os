@@ -52,11 +52,17 @@ graph TD
    - Zero root required! Includes an ADB debloater script (`optimize_phone.sh`) that sets animation scales to 0 and disables heavy OEM background services.
    - Screen stays completely off while `termux-wake-lock` keeps the CPU active.
 
-2. **24/7 Autonomous Hardware Scout (KiCad, PCB, 3D Case Design)**
-   - High-speed polling against the official Freelancer.com REST API.
-   - Strict keyword matching for hardware niches: `kicad`, `pcb`, `schematic`, `gerber`, `breadboard`, `fritzing`, `enclosure`, `3d print`, `stl`, `step`, `esp32`, `arduino`, `2-layer`, `bom`.
-   - Comprehensive blacklist rejection: drops projects containing `trading`, `crypto`, `forex`, `4-layer`, `rf design`, `mains voltage`, etc.
-   - Never auto-bids without your explicit approval — stages matches into a pending queue.
+2. **2-Tier Smart Auto-Bidder & Dynamic Proposal Generator**
+   - **Tier 1 (Auto-Apply)**: Fixed-price projects between $15 and $65 USD that pass strict hardware filtering automatically receive a bid immediately ($30-$40 USD, 4 days) with a dynamically generated 3-paragraph proposal.
+   - **Tier 2 (Needs Confirmation)**: High-value leads (> $65 USD) and hourly projects are paused in a dedicated review queue with pre-filled proposals for 1-click human approval.
+   - **Live Currency Conversion**: Converts client budgets in EUR, GBP, INR, AUD, CAD, SGD, etc., into USD ($) with real-time API rates and fallback exchange tables.
+   - **Tailored 3-Paragraph Proposals**: Custom hook referencing the project title, tailored body (KiCad 2-layer PCB vs 3D-printable enclosure tolerances vs combined full-stack), and professional DRC/preview call-to-action.
+
+3. **Multi-Page Homelab Dashboard (Zero Swiping, Proxmox Aesthetic)**
+   - **View 1: Dashboard**: Pure phone hardware telemetry (CPU %, RAM, Battery temp watchdog, WLAN0 sparklines) & ESP32-C3 Pi-hole status card.
+   - **View 2: Freelancer Hub**: 3 Sub-Tabs for Applied Today, Needs Confirmation (with notification badge), and Client Replies.
+   - **View 3: Fiverr Messages**: Direct IMAP listener inbox for Fiverr inquiries with 1-click clear/delete.
+   - **View 4: Live Terminal**: Full-height color-coded log console with "Run Scout Cycle Now ⚡" and live Proposal Template Editor.
 
 3. **Zero-Ban Fiverr IMAP Listener**
    - Connects directly to `imap.gmail.com` using App Passwords.

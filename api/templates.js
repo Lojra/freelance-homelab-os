@@ -1,0 +1,51 @@
+// Vercel Serverless Function: GET / POST /api/templates
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Auth-Pin, X-Tunnel-Url, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+
+  const pinHeader = req.headers['x-auth-pin'];
+  const body = req.body || {};
+  const pin = pinHeader || body.pin || body.auth_pin;
+  const configuredPin = process.env.DASHBOARD_PIN || process.env.API_AUTH_PIN || '1337';
+
+  if (!pin || String(pin).trim() !== configuredPin) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid or missing X-Auth-Pin' });
+  }
+
+  const overrideTunnel = req.headers['x-tunnel-url'] || req.query?.tunnel_url;
+  const j5Url = (overrideTunnel && String(overrideTunnel).trim()) || process.env.J5_TUNNEL_URL || 'https://subsequently-skip-breath-pizza.trycloudflare.com';
+
+  if (j5Url) {
+    try {
+      const j5Resp = await fetch(`${j5Url.replace(/\/$/, '')}/api/templates`, {
+        method: req.method,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Auth-Pin': configuredPin,
+        },
+        body: req.method === 'POST' ? JSON.stringify(body) : undefined,
+      });
+      if (j5Resp.ok) {
+        const j5Data = await j5Resp.json();
+        return res.status(200).json(j5Data);
+      }
+    } catch (e) {
+      // fallback
+    }
+  }
+
+  const defaultTemplates = {
+    greeting: 'Hi! I just read through your specs for "{title}"—specifically the {tech} requirements.',
+    pcb_body: 'I specialize in reliable, production-ready PCB layout in KiCad. For your project, I will turn your schematic or prototype into a robust 2-layer board layout, ensuring clean ground planes, proper trace width sizing, and thorough Design Rule Checks (DRC). You will receive manufacturing-ready Gerber archives (100% verified for JLCPCB/PCBWay), drill files, pick-and-place files, and a structured Bill of Materials (BOM) with active manufacturer part numbers for effortless assembly.',
+    case_body: 'I specialize in precision 3D mechanical enclosure design for electronics. For your project, I will model a clean, highly durable custom enclosure (delivering print-ready STL and editable STEP files) tailored precisely to your board dimensions, mounting points, cable reliefs, and port cutouts. I design specifically for additive manufacturing (FDM/SLA) with optimal wall thicknesses, print orientations, and tight snap-fit or threaded insert tolerances.',
+    both_body: 'I specialize in end-to-end hardware development, taking circuits from breadboard or schematic into a finished, cased product. For your project, I will design a clean, noise-isolated 2-layer PCB in KiCad with full schematic capture, optimized component placement, and complete DRC verification. Concurrently, I will design a custom 3D-printable enclosure (providing both production STL and parametric STEP files) modeled directly around the PCB dimensions to guarantee exact mounting hole tolerances, connector alignment, and secure snap-fit or screw-boss closures.',
+    closing: 'I provide early 3D and layout previews so you can review and request adjustments before the final production files are generated, and I run full Design Rule Checks against your manufacturer rules. Could you share your wiring diagram, component list, or size constraints so I can get started?'
+  };
+
+  return res.status(200).json({ status: 'success', templates: defaultTemplates, source: 'fallback_memory' });
+}
