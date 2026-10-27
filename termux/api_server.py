@@ -33,6 +33,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WWW_DIR = os.path.join(BASE_DIR, "www")
 STATS_FILE = os.path.join(WWW_DIR, "stats.json")
 MATCHED_JOBS_FILE = os.path.join(WWW_DIR, "matched_jobs.json")
+MATCHED_CONTESTS_FILE = os.path.join(WWW_DIR, "matched_contests.json")
 FIVERR_INBOX_FILE = os.path.join(WWW_DIR, "fiverr_inbox.json")
 DISMISSED_FIVERR_FILE = os.path.join(WWW_DIR, "dismissed_fiverr.json")
 FREELANCER_MSGS_FILE = os.path.join(WWW_DIR, "freelancer_messages.json")
@@ -138,12 +139,12 @@ load_env()
 
 
 def get_token():
-    return os.environ.get("FREELANCER_OAUTH_TOKEN", "YOUR_OAUTH_TOKEN_HERE")
+    return os.environ.get("FREELANCER_OAUTH_TOKEN", "YOUR_FREELANCER_OAUTH_TOKEN")
 
 
 def get_user_id():
-    uid = os.environ.get("FREELANCER_USER_ID", "YOUR_USER_ID")
-    return int(uid) if uid.isdigit() else YOUR_USER_ID
+    uid = os.environ.get("FREELANCER_USER_ID", "YOUR_FREELANCER_USER_ID")
+    return int(uid) if uid.isdigit() else YOUR_FREELANCER_USER_ID
 
 
 def get_configured_pin():
@@ -544,6 +545,9 @@ class J5CommandHandler(BaseHTTPRequestHandler):
             needs_confirmation = [j for j in all_scouted if j.get("bid_status") in ["needs_confirmation", "pending"]]
             dismissed_jobs = [j for j in all_scouted if j.get("bid_status") == "dismissed"]
 
+            matched_contests = load_json_file(MATCHED_CONTESTS_FILE, [])
+            active_contests = [c for c in matched_contests if c.get("status") != "dismissed"]
+
             fiverr_inbox = load_json_file(FIVERR_INBOX_FILE, [])
             freelancer_msgs = load_json_file(FREELANCER_MSGS_FILE, [])
             proposal_templates = load_json_file(PROPOSAL_TEMPLATES_FILE, {})
@@ -569,6 +573,8 @@ class J5CommandHandler(BaseHTTPRequestHandler):
                 "needs_confirmation": needs_confirmation,
                 "dismissed_jobs": dismissed_jobs,
                 "all_scouted": all_scouted,
+                "contests": active_contests,
+                "all_contests": matched_contests,
                 "fiverr_inbox": fiverr_inbox,
                 "freelancer_messages": freelancer_msgs,
                 "proposal_templates": proposal_templates,
@@ -578,6 +584,12 @@ class J5CommandHandler(BaseHTTPRequestHandler):
                 "network_pings": dict(ping_state),
             }
             self.send_json(200, response)
+            return
+
+        if path in ["/api/contests", "/api/matched-contests"]:
+            matched_contests = load_json_file(MATCHED_CONTESTS_FILE, [])
+            active_contests = [c for c in matched_contests if c.get("status") != "dismissed"]
+            self.send_json(200, {"status": "success", "contests": active_contests, "count": len(active_contests)})
             return
 
         if path in ["/api/templates", "/api/proposal-templates"]:
@@ -881,21 +893,39 @@ class J5CommandHandler(BaseHTTPRequestHandler):
             })
             return
 
-        # Route: Dismiss Job Lead
-        if path == "/api/dismiss":
+        # Route: Dismiss Job Lead or Contest
+        if path in ["/api/dismiss", "/api/contests/dismiss"]:
             if not self.is_authenticated(body):
                 self.send_json(401, {"error": "Unauthorized: Invalid or missing X-Auth-Pin"})
                 return
 
-            project_id = body.get("project_id")
+            contest_id = body.get("contest_id") or (body.get("id") if "contest" in path else None)
+            project_id = body.get("project_id") or body.get("id")
+
+            if contest_id:
+                contests = load_json_file(MATCHED_CONTESTS_FILE, [])
+                updated = False
+                for c in contests:
+                    if str(c.get("contest_id")) == str(contest_id):
+                        c["status"] = "dismissed"
+                        c["dismissed_timestamp"] = datetime.now(timezone.utc).isoformat()
+                        updated = True
+                save_json_file(MATCHED_CONTESTS_FILE, contests)
+                self.send_json(200, {
+                    "status": "success",
+                    "message": f"Contest #{contest_id} dismissed",
+                    "updated": updated
+                })
+                return
+
             if not project_id:
-                self.send_json(400, {"error": "Missing project_id"})
+                self.send_json(400, {"error": "Missing project_id or contest_id"})
                 return
 
             jobs = load_json_file(MATCHED_JOBS_FILE, [])
             updated = False
             for j in jobs:
-                if j.get("project_id") == int(project_id):
+                if str(j.get("project_id")) == str(project_id):
                     j["bid_status"] = "dismissed"
                     j["dismissed_timestamp"] = datetime.now(timezone.utc).isoformat()
                     updated = True
@@ -903,7 +933,7 @@ class J5CommandHandler(BaseHTTPRequestHandler):
 
             stats = load_json_file(STATS_FILE, {})
             stats["dismissed_jobs"] = stats.get("dismissed_jobs", 0) + 1
-            stats["pending_matches"] = max(0, stats.get("pending_matches", 1) - 1)
+            stats["needs_confirmation_count"] = max(0, sum(1 for j in jobs if j.get("bid_status") in ["needs_confirmation", "pending"]))
             save_json_file(STATS_FILE, stats)
 
             self.send_json(200, {

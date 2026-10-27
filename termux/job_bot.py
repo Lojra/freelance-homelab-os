@@ -37,6 +37,7 @@ logger = logging.getLogger("HardwareScout")
 # Base paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SEEN_JOBS_FILE = os.path.join(BASE_DIR, "seen_jobs.json")
+SEEN_CONTESTS_FILE = os.path.join(BASE_DIR, "seen_contests.json")
 SEEN_MSGS_FILE = os.path.join(BASE_DIR, "seen_messages.json")
 SEEN_FIVERR_FILE = os.path.join(BASE_DIR, "seen_fiverr_emails.json")
 ENV_FILE = os.path.join(BASE_DIR, ".env")
@@ -44,6 +45,7 @@ LOG_FILE = os.path.join(BASE_DIR, "job_bot.log")
 WWW_DIR = os.path.join(BASE_DIR, "www")
 STATS_JSON = os.path.join(WWW_DIR, "stats.json")
 MATCHED_JOBS_JSON = os.path.join(WWW_DIR, "matched_jobs.json")
+MATCHED_CONTESTS_JSON = os.path.join(WWW_DIR, "matched_contests.json")
 FIVERR_INBOX_JSON = os.path.join(WWW_DIR, "fiverr_inbox.json")
 DISMISSED_FIVERR_FILE = os.path.join(WWW_DIR, "dismissed_fiverr.json")
 FREELANCER_MESSAGES_JSON = os.path.join(WWW_DIR, "freelancer_messages.json")
@@ -103,7 +105,7 @@ FALLBACK_USD_RATES = {
     "PKR": 0.0036,
 }
 
-DEFAULT_VERCEL_APP_URL = "https://your-homelab-app.vercel.app"
+DEFAULT_VERCEL_APP_URL = "https://freelancer-command-center-chi.vercel.app"
 FREELANCER_API_BASE = "https://www.freelancer.com/api"
 
 
@@ -207,6 +209,30 @@ def save_matched_jobs(jobs: list[dict], max_items: int = 250):
         logger.error(f"Error saving {MATCHED_JOBS_JSON}: {e}")
 
 
+def load_matched_contests() -> list[dict]:
+    """Load structured matched contests queue."""
+    if os.path.exists(MATCHED_CONTESTS_JSON):
+        try:
+            with open(MATCHED_CONTESTS_JSON, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data
+        except Exception as e:
+            logger.warning(f"Error reading {MATCHED_CONTESTS_JSON}: {e}")
+    return []
+
+
+def save_matched_contests(contests: list[dict], max_items: int = 150):
+    """Save structured matched contests queue."""
+    try:
+        os.makedirs(WWW_DIR, exist_ok=True)
+        capped = contests[-max_items:]
+        with open(MATCHED_CONTESTS_JSON, "w", encoding="utf-8") as f:
+            json.dump(capped, f, indent=2)
+    except Exception as e:
+        logger.error(f"Error saving {MATCHED_CONTESTS_JSON}: {e}")
+
+
 def load_fiverr_inbox() -> list[dict]:
     """Load structured Fiverr client inquiry inbox."""
     if os.path.exists(FIVERR_INBOX_JSON):
@@ -260,7 +286,7 @@ def resolve_user_id(token: str, configured_id: str) -> int | None:
             return user_id
     except Exception as e:
         logger.error(f"Error querying Freelancer self endpoint: {e}")
-    return YOUR_USER_ID
+    return YOUR_FREELANCER_USER_ID
 
 
 def sync_profile_skills(token: str, user_id: int):
@@ -788,6 +814,150 @@ def poll_and_scout_jobs(token: str, webhook_url: str, self_user_id: int):
 
 
 # ---------------------------------------------------------------------------
+# Freelancer Contests Poller & Hardware Scout
+# ---------------------------------------------------------------------------
+def format_time_remaining(end_timestamp: float | None) -> str:
+    """Format remaining seconds into human-readable string like '3d 14h left'."""
+    if not end_timestamp:
+        return "Active"
+    now = time.time()
+    diff = end_timestamp - now
+    if diff <= 0:
+        return "Ended"
+    days = int(diff // 86400)
+    hours = int((diff % 86400) // 3600)
+    if days > 0:
+        return f"{days}d {hours}h left"
+    mins = int((diff % 3600) // 60)
+    return f"{hours}h {mins}m left"
+
+
+def poll_and_scout_contests(token: str, webhook_url: str):
+    """
+    Polls Freelancer active contests API, evaluates with strict 2-layer hardware keywords,
+    converts prize to USD, saves to www/matched_contests.json, and fires Discord alert.
+    """
+    logger.info("--- [Contests Polling & Hardware Evaluation] ---")
+    seen_contests = load_id_set(SEEN_CONTESTS_FILE)
+    matched_contests_list = load_matched_contests()
+    existing_contest_map = {c.get("contest_id"): c for c in matched_contests_list if c.get("contest_id")}
+
+    url = f"{FREELANCER_API_BASE}/contests/0.1/contests/active/"
+    params = {
+        "limit": 25,
+        "full_description": "true",
+        "job_details": "true",
+    }
+
+    try:
+        resp = requests.get(url, headers=get_auth_headers(token), params=params, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        logger.error(f"Error fetching active contests from Freelancer API: {e}")
+        return
+
+    contests = data.get("result", {}).get("contests", [])
+    logger.info(f"Retrieved {len(contests)} active contests from Freelancer.")
+
+    new_seen = set(seen_contests)
+    processed_count = 0
+    new_matches = 0
+    app_base_url = get_app_url()
+
+    for contest in contests:
+        cid = contest.get("id")
+        if not cid or cid in seen_contests:
+            continue
+
+        c_status = contest.get("status")
+        if c_status != "active":
+            new_seen.add(cid)
+            continue
+
+        title = contest.get("title", "")
+        raw_desc = contest.get("description", "") or ""
+        clean_desc = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", raw_desc)).strip()
+        jobs_list = [j.get("name", "") for j in (contest.get("jobs") or [])]
+
+        is_match, reason, matched_kws = evaluate_project(title, clean_desc, jobs_list)
+
+        if is_match:
+            new_matches += 1
+            prize_val = float(contest.get("prize") or 0.0)
+            currency = contest.get("currency") or {}
+            curr_code = currency.get("code", "USD")
+            curr_sign = currency.get("sign", "$")
+            api_rate = currency.get("exchange_rate")
+
+            prize_usd = convert_to_usd(prize_val, curr_code, api_rate)
+            if curr_code == "USD":
+                prize_display = f"${prize_usd:g} USD"
+            else:
+                prize_display = f"${prize_usd:g} USD ({curr_sign}{prize_val:g} {curr_code})"
+
+            seo_url = contest.get("seo_url")
+            contest_url = f"https://www.freelancer.com/{seo_url}" if seo_url else f"https://www.freelancer.com/contest/{cid}"
+
+            time_sub = contest.get("time_submitted")
+            duration_days = contest.get("duration") or 5
+            end_time = contest.get("time_ended") or (time_sub + duration_days * 86400 if time_sub else None)
+            time_remaining = format_time_remaining(end_time)
+            end_iso = datetime.fromtimestamp(end_time, tz=timezone.utc).isoformat() if end_time else None
+            entry_count = contest.get("entry_count", 0)
+
+            contest_record = {
+                "contest_id": cid,
+                "title": title,
+                "url": contest_url,
+                "description": clean_desc,
+                "prize": prize_val,
+                "prize_usd": prize_usd,
+                "currency": curr_code,
+                "currency_sign": curr_sign,
+                "prize_display": prize_display,
+                "skills": jobs_list,
+                "matched_keywords": matched_kws,
+                "entry_count": entry_count,
+                "time_remaining_str": time_remaining,
+                "end_timestamp": end_iso,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "status": "active"
+            }
+
+            matched_contests_list.append(contest_record)
+            existing_contest_map[cid] = contest_record
+
+            logger.info(f"🏆 [CONTEST MATCH] #{cid}: '{title[:50]}' | Prize: {prize_display} | Matched: {matched_kws}")
+
+            # Send Discord Webhook Alert
+            contest_dash_url = f"{app_base_url}?view=freelancer&tab=contests"
+            snippet = (clean_desc[:240] + "...") if len(clean_desc) > 240 else clean_desc
+            fields = [
+                {"name": "💰 Prize", "value": f"**{prize_display}**", "inline": True},
+                {"name": "⏱ Time Remaining", "value": time_remaining, "inline": True},
+                {"name": "👥 Submissions", "value": f"{entry_count} entries", "inline": True},
+                {"name": "🎯 Matched Niche", "value": f"`{', '.join(matched_kws)}`", "inline": False},
+                {"name": "⚡ Action", "value": f"[🏆 **Enter on Freelancer**]({contest_url}) • [Open in Studio]({contest_dash_url})", "inline": False},
+            ]
+            send_discord_notification(
+                webhook_url=webhook_url,
+                title=f"🏆 [NEW CONTEST MATCH: Prize ${prize_usd:g} USD] - {title[:75]}",
+                description=f"**Brief Snippet:**\n{snippet}",
+                fields=fields,
+                color=0xF59E0B,  # Gold / Amber
+                url=contest_url
+            )
+
+        new_seen.add(cid)
+        processed_count += 1
+
+    save_id_set(SEEN_CONTESTS_FILE, new_seen)
+    save_matched_contests(matched_contests_list)
+    logger.info(f"Contest scout cycle finished: Evaluated {processed_count} contests | Found {new_matches} new hardware matches.")
+
+
+# ---------------------------------------------------------------------------
 # Fiverr IMAP Email Listener (Zero-Ban Local Gmail IMAP)
 # ---------------------------------------------------------------------------
 def poll_fiverr_imap(webhook_url: str):
@@ -1151,6 +1321,8 @@ def write_stats_json():
         needs_confirm = [j for j in matched_jobs if j.get("bid_status") in ["needs_confirmation", "pending"]]
         dismissed_jobs = [j for j in matched_jobs if j.get("bid_status") == "dismissed"]
         fiverr_unread = [m for m in fiverr_inbox if m.get("status") == "unread"]
+        matched_contests = load_matched_contests()
+        active_contests = [c for c in matched_contests if c.get("status") != "dismissed"]
 
         # Calculate applied today count
         today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -1166,6 +1338,8 @@ def write_stats_json():
             "total_applied_count": len(applied_jobs),
             "needs_confirmation_count": len(needs_confirm),
             "dismissed_jobs": len(dismissed_jobs),
+            "total_matched_contests": len(matched_contests),
+            "active_contests_count": len(active_contests),
             "total_processed_messages": len(seen_msgs),
             "fiverr_inbox_count": len(fiverr_inbox),
             "fiverr_unread_count": len(fiverr_unread),
@@ -1202,7 +1376,7 @@ def run_cycle():
 
     token = os.environ.get("FREELANCER_OAUTH_TOKEN")
     discord_webhook = os.environ.get("DISCORD_WEBHOOK_URL")
-    user_id_raw = os.environ.get("FREELANCER_USER_ID", "YOUR_USER_ID")
+    user_id_raw = os.environ.get("FREELANCER_USER_ID", "YOUR_FREELANCER_USER_ID")
 
     # Thermal & ESP32 Watchdog Checks
     check_battery_thermal_watchdog(discord_webhook)
@@ -1223,13 +1397,16 @@ def run_cycle():
     # 2. Poll Active Projects, evaluate 2-layer niche, auto-bid Tier 1 or queue Tier 2
     poll_and_scout_jobs(token, discord_webhook, user_id)
 
-    # 3. Poll Freelancer Unread Messages
+    # 3. Poll Active Contests, evaluate 2-layer niche, convert prize to USD
+    poll_and_scout_contests(token, discord_webhook)
+
+    # 4. Poll Freelancer Unread Messages
     poll_unread_messages(token, user_id, discord_webhook)
 
-    # 4. Poll Fiverr IMAP Emails
+    # 5. Poll Fiverr IMAP Emails
     poll_fiverr_imap(discord_webhook)
 
-    # 5. Write Stats JSON
+    # 6. Write Stats JSON
     write_stats_json()
 
     elapsed = round(time.time() - start_time, 2)

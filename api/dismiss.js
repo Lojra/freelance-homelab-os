@@ -2,7 +2,7 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Auth-Pin, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Auth-Pin, X-Tunnel-Url, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
@@ -21,12 +21,14 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized: Invalid or missing X-Auth-Pin' });
   }
 
-  const { project_id } = body;
-  if (!project_id) {
-    return res.status(400).json({ error: 'Missing project_id' });
+  const { project_id, contest_id } = body;
+  if (!project_id && !contest_id) {
+    return res.status(400).json({ error: 'Missing project_id or contest_id' });
   }
 
-  const j5Url = process.env.J5_TUNNEL_URL;
+  // Attempt proxy to J5 tunnel if available
+  const overrideTunnel = req.headers['x-tunnel-url'] || req.query?.tunnel_url;
+  const j5Url = (overrideTunnel && String(overrideTunnel).trim()) || process.env.J5_TUNNEL_URL || 'https://your-tunnel.trycloudflare.com';
   if (j5Url) {
     try {
       const resp = await fetch(`${j5Url.replace(/\/$/, '')}/api/dismiss`, {
@@ -35,18 +37,21 @@ export default async function handler(req, res) {
           'Content-Type': 'application/json',
           'X-Auth-Pin': configuredPin,
         },
-        body: JSON.stringify({ project_id }),
+        body: JSON.stringify(body),
       });
       if (resp.ok) {
         const j5Data = await resp.json();
         return res.status(200).json(j5Data);
       }
-    } catch (e) {}
+    } catch (e) {
+      // fallback
+    }
   }
 
   return res.status(200).json({
     status: 'success',
-    message: `Project #${project_id} dismissed`,
+    message: contest_id ? `Contest #${contest_id} dismissed` : `Project #${project_id} dismissed`,
     project_id,
+    contest_id,
   });
 }

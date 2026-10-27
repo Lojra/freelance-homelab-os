@@ -100,6 +100,24 @@
     .log-line-auto { color: #10B981; font-weight: 700; background: rgba(16, 185, 129, 0.1); }
     .log-line-warn { color: #FBBF24; font-weight: 600; }
     .log-line-err { color: #F87171; font-weight: 700; background: rgba(239, 68, 68, 0.1); }
+
+    /* Mobile and container overflow guard */
+    html, body {
+      max-width: 100vw;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    pre, textarea, input, code, a, p, span, div {
+      max-width: 100%;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    main, section, header, nav, aside {
+      max-width: 100vw;
+    }
   </style>
 </head>
 <body class="font-sans antialiased bg-obsidian text-slate-100 flex flex-col min-h-screen">
@@ -530,6 +548,11 @@
                 <span id="tab-count-confirmation" class="ml-1.5 px-1.5 py-0.2 rounded text-[10px] font-mono bg-nodeAmber/20 text-nodeAmber border border-nodeAmber/30">0</span>
               </button>
 
+              <button onclick="switchFreelancerTab('contests')" id="tab-btn-contests" class="px-3.5 py-1.5 rounded-lg text-xs font-heading font-semibold transition cursor-pointer text-slate-400 hover:text-white flex items-center">
+                <span>Contests</span>
+                <span id="tab-count-contests" class="ml-1.5 px-1.5 py-0.2 rounded text-[10px] font-mono bg-nodeAmber/20 text-nodeAmber border border-nodeAmber/30">0</span>
+              </button>
+
               <button onclick="switchFreelancerTab('messages')" id="tab-btn-messages" class="px-3.5 py-1.5 rounded-lg text-xs font-heading font-semibold transition cursor-pointer text-slate-400 hover:text-white">
                 <span>Client Replies</span>
                 <span id="tab-count-messages" class="ml-1.5 px-1.5 py-0.2 rounded text-[10px] font-mono bg-slate-800 text-slate-300">0</span>
@@ -567,6 +590,18 @@
 
             <div id="confirmation-jobs-container" class="space-y-4">
               <!-- Dynamically rendered review cards -->
+            </div>
+          </div>
+
+          <!-- SUB-TAB D: FREELANCER CONTESTS -->
+          <div id="fl-subtab-contests" class="space-y-4 hidden">
+            <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
+              <span>MATCHED HARDWARE &amp; 3D CONTESTS</span>
+              <span id="contests-summary-label">Scouted via Freelancer Contest API</span>
+            </div>
+
+            <div id="contests-container" class="space-y-3">
+              <!-- Dynamically populated contest cards -->
             </div>
           </div>
 
@@ -848,7 +883,10 @@
         const mobBtn = document.getElementById(`mobile-nav-${v}`);
 
         if (v === viewName) {
-          sec.classList.remove('hidden');
+          if (sec) {
+            sec.style.display = 'block';
+            sec.classList.remove('hidden');
+          }
           if (sideBtn) {
             sideBtn.className = 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-white bg-surfaceActive border border-borderMuted';
           }
@@ -856,7 +894,10 @@
             mobBtn.className = 'flex flex-col items-center gap-1 text-nodeEmerald cursor-pointer relative';
           }
         } else {
-          sec.classList.add('hidden');
+          if (sec) {
+            sec.style.display = 'none';
+            sec.classList.add('hidden');
+          }
           if (sideBtn) {
             sideBtn.className = 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-slate-400 hover:text-white hover:bg-surfaceHover';
           }
@@ -872,16 +913,24 @@
       triggerHaptic('light');
       AppState.currentFreelancerTab = tabName;
 
-      ['applied', 'confirmation', 'messages'].forEach(t => {
+      ['applied', 'confirmation', 'contests', 'messages'].forEach(t => {
         const pane = document.getElementById(`fl-subtab-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
 
-        if (t === tabName) {
-          pane.classList.remove('hidden');
-          btn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-heading font-semibold transition cursor-pointer bg-nodeEmerald text-obsidian shadow-glowEmerald';
-        } else {
-          pane.classList.add('hidden');
-          btn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-heading font-semibold transition cursor-pointer text-slate-400 hover:text-white';
+        if (pane) {
+          if (t === tabName) {
+            pane.style.display = 'block';
+            pane.classList.remove('hidden');
+            if (btn) {
+              btn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-heading font-semibold transition cursor-pointer bg-nodeEmerald text-obsidian shadow-glowEmerald flex items-center';
+            }
+          } else {
+            pane.style.display = 'none';
+            pane.classList.add('hidden');
+            if (btn) {
+              btn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-heading font-semibold transition cursor-pointer text-slate-400 hover:text-white flex items-center';
+            }
+          }
         }
       });
     }
@@ -926,7 +975,7 @@
       renderTelemetry(data.telemetry, data.esp32_pihole, data.network_pings);
 
       // Freelancer Hub (View 2)
-      renderFreelancerHub(data.applied_jobs || [], data.needs_confirmation || [], data.freelancer_messages || []);
+      renderFreelancerHub(data.applied_jobs || [], data.needs_confirmation || [], data.freelancer_messages || [], data.contests || []);
 
       // Fiverr Inbox (View 3)
       renderFiverrInbox(data.fiverr_inbox || []);
@@ -1044,10 +1093,12 @@
     }
 
     // View 2: Freelancer Hub Renderer
-    function renderFreelancerHub(applied, confirmation, messages) {
+    function renderFreelancerHub(applied, confirmation, messages, contests = []) {
       // Badges
       document.getElementById('tab-count-applied').textContent = applied.length;
       document.getElementById('tab-count-confirmation').textContent = confirmation.length;
+      const contestBadge = document.getElementById('tab-count-contests');
+      if (contestBadge) contestBadge.textContent = contests.length;
       document.getElementById('tab-count-messages').textContent = messages.length;
 
       const sideBadge = document.getElementById('sidebar-confirm-badge');
@@ -1068,8 +1119,123 @@
       // Render Sub-Tab B: Needs Confirmation
       renderConfirmationTab(confirmation);
 
+      // Render Sub-Tab: Contests
+      renderContestsTab(contests);
+
       // Render Sub-Tab C: Messages
       renderFreelancerMessages(messages);
+    }
+
+    // Render Sub-Tab: Contests
+    function renderContestsTab(contests) {
+      const container = document.getElementById('contests-container');
+      if (!container) return;
+
+      if (!contests || contests.length === 0) {
+        container.innerHTML = `
+          <div class="bg-surface border border-borderSubtle rounded-2xl p-10 text-center">
+            <div class="w-12 h-12 rounded-xl bg-nodeAmber/10 text-nodeAmber mx-auto flex items-center justify-center mb-3">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+            </div>
+            <h3 class="font-heading font-bold text-white text-base">No active hardware contests found</h3>
+            <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">The J5 bot actively scouts Freelancer contests matching KiCad, PCB, and 3D printing requirements with guaranteed prize pools.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = contests.map((c, idx) => {
+        const prizeUsd = c.prize_usd ? `$${c.prize_usd} USD` : `$${c.prize || 0} USD`;
+        const nativeDisplay = (c.currency && c.currency !== 'USD') ? `(${c.currency_sign || ''}${c.prize} ${c.currency})` : '';
+        const timeRemaining = c.time_remaining || 'Active';
+        const entryCount = c.entry_count !== undefined ? `${c.entry_count} entries` : '';
+
+        return `
+          <div id="contest-card-${c.contest_id}" class="bg-surface border border-borderSubtle hover:border-nodeAmber/40 rounded-2xl p-4 sm:p-5 shadow-card transition space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+              <div class="min-w-0 space-y-1">
+                <div class="flex flex-wrap items-center gap-2 mb-1">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-nodeAmber/20 text-nodeAmber border border-nodeAmber/30 flex items-center gap-1">
+                    <span>🏆 CONTEST</span>
+                  </span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono text-slate-300 bg-obsidian border border-borderSubtle">
+                    ⏳ ${timeRemaining}
+                  </span>
+                  ${entryCount ? `<span class="px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-obsidian border border-borderSubtle">${entryCount}</span>` : ''}
+                  <span class="text-[11px] font-mono text-slate-500">#${c.contest_id}</span>
+                </div>
+                <h3 class="font-heading font-bold text-white text-base hover:text-nodeEmerald transition">
+                  <a href="${c.url}" target="_blank" class="hover:underline flex items-center gap-1.5">
+                    <span>${c.title}</span>
+                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                  </a>
+                </h3>
+              </div>
+
+              <!-- Prize Badge -->
+              <div class="bg-obsidian border border-borderSubtle rounded-xl p-3 text-right flex-shrink-0">
+                <div class="text-[10px] font-mono text-slate-500 uppercase">PRIZE POOL</div>
+                <div class="text-base font-bold font-mono text-nodeAmber">${prizeUsd}</div>
+                ${nativeDisplay ? `<div class="text-[11px] font-mono text-slate-400">${nativeDisplay}</div>` : ''}
+              </div>
+            </div>
+
+            <!-- Brief / Description -->
+            <div class="text-xs text-slate-300 leading-relaxed bg-obsidian/40 p-3 rounded-xl border border-borderSubtle select-text max-h-36 overflow-y-auto">
+              ${c.description || 'No description provided.'}
+            </div>
+
+            <!-- Matched Tags & Actions -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-borderSubtle">
+              <div class="flex flex-wrap gap-1.5">
+                ${(c.matched_keywords || []).map(k => `<span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-obsidian text-nodeCyan border border-nodeCyan/30">#${k}</span>`).join('')}
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button onclick="dismissContest(${c.contest_id})" class="px-3.5 py-1.5 rounded-xl bg-obsidian hover:bg-nodeRose/10 text-slate-400 hover:text-nodeRose border border-borderSubtle hover:border-nodeRose/30 text-xs font-mono transition cursor-pointer">
+                  Dismiss
+                </button>
+                <a href="${c.url}" target="_blank" class="px-4 py-1.5 rounded-xl bg-nodeEmerald hover:bg-emerald-400 text-obsidian font-heading font-bold text-xs tracking-wide shadow-glowEmerald transition cursor-pointer active:scale-95 flex items-center gap-1.5">
+                  <span>Enter on Freelancer ↗</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function dismissContest(contestId) {
+      triggerHaptic('light');
+      const card = document.getElementById(`contest-card-${contestId}`);
+      if (card) {
+        card.style.transition = 'all 0.3s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+          card.remove();
+          const remaining = document.querySelectorAll('#contests-container > [id^="contest-card-"]');
+          if (remaining.length === 0) {
+            renderContestsTab([]);
+          }
+        }, 300);
+      }
+
+      const badge = document.getElementById('tab-count-contests');
+      if (badge) {
+        const cur = parseInt(badge.textContent) || 0;
+        badge.textContent = Math.max(0, cur - 1);
+      }
+
+      try {
+        await fetch('/api/dismiss', {
+          method: 'POST',
+          headers: getApiHeaders(),
+          body: JSON.stringify({ contest_id: contestId })
+        });
+      } catch (e) {
+        console.warn('Contest dismissal error:', e);
+      }
     }
 
     // Render Sub-Tab A: Applied Jobs
@@ -1310,14 +1476,44 @@ ${job.proposal || 'Proposal details stored on server.'}
         const data = await resp.json();
         if (resp.ok) {
           triggerHaptic('success');
-          // Animate card removal
+          // Animate card removal immediately without page refresh
           const card = document.getElementById(`confirm-card-${projectId}`);
           if (card) {
-            card.style.transition = 'all 0.4s ease';
+            card.style.transition = 'all 0.3s ease';
             card.style.opacity = '0';
             card.style.transform = 'translateY(-20px)';
-            setTimeout(() => fetchState(false), 400);
+            setTimeout(() => {
+              card.remove();
+              const remaining = document.querySelectorAll('#confirmation-jobs-container > [id^="confirm-card-"]');
+              if (remaining.length === 0) {
+                renderConfirmationTab([]);
+              }
+            }, 300);
           }
+          // Clear inputs so they do not leak into subsequent actions
+          const amtInput = document.getElementById(`bid-amount-${projectId}`);
+          if (amtInput) amtInput.value = '';
+          const propInput = document.getElementById(`bid-proposal-${projectId}`);
+          if (propInput) propInput.value = '';
+
+          // Update confirmation count badges dynamically
+          const confBadge = document.getElementById('tab-count-confirmation');
+          const sideBadge = document.getElementById('sidebar-confirm-badge');
+          const mobBadge = document.getElementById('mobile-confirm-badge');
+          if (confBadge) {
+            const newCount = Math.max(0, (parseInt(confBadge.textContent) || 1) - 1);
+            confBadge.textContent = newCount;
+            if (newCount > 0) {
+              sideBadge.textContent = newCount;
+              sideBadge.classList.remove('hidden');
+              mobBadge.textContent = newCount;
+              mobBadge.classList.remove('hidden');
+            } else {
+              sideBadge.classList.add('hidden');
+              mobBadge.classList.add('hidden');
+            }
+          }
+          setTimeout(() => fetchState(false), 800);
         } else {
           triggerHaptic('error');
           alert(`Bid submission rejected: ${data.error || JSON.stringify(data.details)}`);
@@ -1332,21 +1528,56 @@ ${job.proposal || 'Proposal details stored on server.'}
       }
     }
 
-    // Dismiss Job Lead Action
+    // Dismiss Job Lead Action with immediate DOM removal and badge update
     async function dismissJobLead(projectId) {
       triggerHaptic('light');
+      const card = document.getElementById(`confirm-card-${projectId}`);
+      if (card) {
+        card.style.transition = 'all 0.3s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(-10px)';
+        setTimeout(() => {
+          card.remove();
+          const remaining = document.querySelectorAll('#confirmation-jobs-container > [id^="confirm-card-"]');
+          if (remaining.length === 0) {
+            renderConfirmationTab([]);
+          }
+        }, 300);
+      }
+
+      // Clear inputs
+      const amtInput = document.getElementById(`bid-amount-${projectId}`);
+      if (amtInput) amtInput.value = '';
+      const propInput = document.getElementById(`bid-proposal-${projectId}`);
+      if (propInput) propInput.value = '';
+
+      // Update badges immediately
+      const confBadge = document.getElementById('tab-count-confirmation');
+      const sideBadge = document.getElementById('sidebar-confirm-badge');
+      const mobBadge = document.getElementById('mobile-confirm-badge');
+      if (confBadge) {
+        const newCount = Math.max(0, (parseInt(confBadge.textContent) || 1) - 1);
+        confBadge.textContent = newCount;
+        if (newCount > 0) {
+          sideBadge.textContent = newCount;
+          sideBadge.classList.remove('hidden');
+          mobBadge.textContent = newCount;
+          mobBadge.classList.remove('hidden');
+        } else {
+          sideBadge.classList.add('hidden');
+          mobBadge.classList.add('hidden');
+        }
+      }
+
       try {
-        const resp = await fetch('/api/dismiss', {
+        await fetch('/api/dismiss', {
           method: 'POST',
           headers: getApiHeaders(),
           body: JSON.stringify({ project_id: projectId })
         });
-        if (resp.ok) {
-          const card = document.getElementById(`confirm-card-${projectId}`);
-          if (card) card.remove();
-          fetchState(false);
-        }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Dismiss error:', e);
+      }
     }
 
     // Render Sub-Tab C: Freelancer Messages
@@ -1571,7 +1802,7 @@ ${job.proposal || 'Proposal details stored on server.'}
       if (view && ['dashboard', 'freelancer', 'fiverr', 'terminal'].includes(view)) {
         switchView(view);
       }
-      if (tab && ['applied', 'confirmation', 'messages'].includes(tab)) {
+      if (tab && ['applied', 'confirmation', 'contests', 'messages'].includes(tab)) {
         switchFreelancerTab(tab);
       }
     }
