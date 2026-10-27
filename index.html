@@ -413,7 +413,9 @@
                 </div>
                 <div class="text-right">
                   <div class="text-[10px] font-mono text-slate-500">RX / TX RATE</div>
-                  <div class="text-xs font-mono text-slate-300" id="net-rx-speed">0.0 KiB/s</div>
+                  <div class="text-xs font-mono text-slate-300">
+                    <span id="net-rx-speed">0.0 KiB/s</span> / <span id="net-tx-speed">0.0 KiB/s</span>
+                  </div>
                 </div>
               </div>
               <div class="pt-2 border-t border-borderSubtle flex justify-between text-[10px] font-mono text-slate-500">
@@ -963,31 +965,66 @@
     }
 
     // Render Full State Data Across Views
+        // Safe DOM Text Setter
+    function safeSetText(id, val) {
+      const el = document.getElementById(id);
+      if (el && val !== undefined && val !== null) {
+        el.textContent = val;
+      }
+    }
+
     function renderCompleteState(data) {
+      if (!data) return;
       AppState.stateData = data;
 
       // Update Tunnel pill
       if (data.tunnel_url) {
         AppState.tunnelUrl = data.tunnel_url;
         const cleanHost = data.tunnel_url.replace('https://', '').split('.')[0];
-        document.getElementById('header-tunnel-label').textContent = `${cleanHost}.trycloudflare.com`;
+        safeSetText('header-tunnel-label', `${cleanHost}.trycloudflare.com`);
       }
 
-      // Telemetry (View 1)
-      renderTelemetry(data.telemetry, data.esp32_pihole, data.network_pings);
+      // 1. Telemetry (View 1)
+      try {
+        renderTelemetry(data.telemetry, data.esp32_pihole, data.network_pings);
+      } catch (err) {
+        console.error('Error rendering telemetry:', err);
+      }
 
-      // Freelancer Hub (View 2)
-      renderFreelancerHub(data.applied_jobs || [], data.needs_confirmation || [], data.freelancer_messages || [], data.contests || []);
+      // 2. Freelancer Hub (View 2)
+      try {
+        const applied = Array.isArray(data.applied_jobs) ? data.applied_jobs : [];
+        const confirm = Array.isArray(data.needs_confirmation) ? data.needs_confirmation : (Array.isArray(data.jobs) ? data.jobs : []);
+        const msgs = Array.isArray(data.freelancer_messages) ? data.freelancer_messages : [];
+        const contests = Array.isArray(data.contests) ? data.contests : [];
+        renderFreelancerHub(applied, confirm, msgs, contests);
+      } catch (err) {
+        console.error('Error rendering freelancer hub:', err);
+      }
 
-      // Fiverr Inbox (View 3)
-      renderFiverrInbox(data.fiverr_inbox || []);
+      // 3. Fiverr Inbox (View 3)
+      try {
+        const fiverr = Array.isArray(data.fiverr_inbox) ? data.fiverr_inbox : [];
+        renderFiverrInbox(fiverr);
+      } catch (err) {
+        console.error('Error rendering fiverr inbox:', err);
+      }
 
-      // Live Terminal (View 4)
-      renderTerminalLogs(data.logs || []);
+      // 4. Live Terminal (View 4)
+      try {
+        const logs = Array.isArray(data.logs) ? data.logs : [];
+        renderTerminalLogs(logs);
+      } catch (err) {
+        console.error('Error rendering live terminal:', err);
+      }
 
-      // Proposal Templates
+      // 5. Proposal Templates
       if (data.proposal_templates) {
-        populateProposalTemplateEditor(data.proposal_templates);
+        try {
+          populateProposalTemplateEditor(data.proposal_templates);
+        } catch (err) {
+          console.error('Error populating proposal templates:', err);
+        }
       }
     }
 
@@ -1009,57 +1046,63 @@
 
       // CPU
       const cpuVal = t.cpu?.percent ?? 0;
-      document.getElementById('cpu-percent-label').textContent = `${Math.round(cpuVal)}%`;
-      document.getElementById('cpu-bar').style.width = `${Math.min(100, Math.max(5, cpuVal))}%`;
+      safeSetText('cpu-percent-label', `${Math.round(cpuVal)}%`);
+      const cpuBar = document.getElementById('cpu-bar');
+      if (cpuBar) cpuBar.style.width = `${Math.min(100, Math.max(5, cpuVal))}%`;
       if (t.cpu?.history) {
-        document.getElementById('cpu-sparkline-path').setAttribute('d', generateSvgPath(t.cpu.history, 200, 40, 0, 100));
+        const spark = document.getElementById('cpu-sparkline-path');
+        if (spark) spark.setAttribute('d', generateSvgPath(t.cpu.history, 200, 40, 0, 100));
       }
       if (t.cpu?.load_1m !== undefined) {
-        document.getElementById('cpu-loadavg').textContent = `${t.cpu.load_1m.toFixed(2)} / ${t.cpu.load_5m.toFixed(2)} / ${t.cpu.load_15m.toFixed(2)}`;
+        safeSetText('cpu-loadavg', `${t.cpu.load_1m.toFixed(2)} / ${t.cpu.load_5m.toFixed(2)} / ${t.cpu.load_15m.toFixed(2)}`);
       }
 
       // RAM
       const ramVal = t.memory?.percent ?? 0;
-      document.getElementById('ram-percent-label').textContent = `${Math.round(ramVal)}%`;
-      document.getElementById('ram-bar').style.width = `${Math.min(100, Math.max(5, ramVal))}%`;
+      safeSetText('ram-percent-label', `${Math.round(ramVal)}%`);
+      const ramBar = document.getElementById('ram-bar');
+      if (ramBar) ramBar.style.width = `${Math.min(100, Math.max(5, ramVal))}%`;
       if (t.memory?.history) {
-        document.getElementById('ram-sparkline-path').setAttribute('d', generateSvgPath(t.memory.history, 200, 40, 50, 100));
+        const spark = document.getElementById('ram-sparkline-path');
+        if (spark) spark.setAttribute('d', generateSvgPath(t.memory.history, 200, 40, 50, 100));
       }
       if (t.memory) {
-        document.getElementById('ram-used-label').textContent = `${Math.round(t.memory.used_mb)} / ${Math.round(t.memory.total_mb)} MiB`;
-        document.getElementById('ram-free-label').textContent = `${Math.round(t.memory.free_mb)} MiB Free`;
+        safeSetText('ram-used-label', `${Math.round(t.memory.used_mb)} / ${Math.round(t.memory.total_mb)} MiB`);
+        safeSetText('ram-free-label', `${Math.round(t.memory.free_mb)} MiB Free`);
       }
 
       // Battery & Temp
       if (t.battery) {
-        document.getElementById('battery-percent').textContent = `${t.battery.percent}%`;
-        document.getElementById('battery-temp').textContent = `${t.battery.temp_c}°C`;
-        document.getElementById('battery-charging-status').textContent = t.battery.status || 'Active';
+        safeSetText('battery-percent', `${t.battery.percent}%`);
+        safeSetText('battery-temp', `${t.battery.temp_c}°C`);
+        safeSetText('battery-charging-status', t.battery.status || 'Active');
         const tag = document.getElementById('battery-status-tag');
-        if (t.battery.temp_c >= 39.0) {
-          tag.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-nodeRose/20 text-nodeRose border border-nodeRose/30';
-          tag.textContent = 'THERMAL WARNING';
-        } else {
-          tag.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-nodeEmerald/15 text-nodeEmerald';
-          tag.textContent = 'SAFE';
+        if (tag) {
+          if (t.battery.temp_c >= 39.0) {
+            tag.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-nodeRose/20 text-nodeRose border border-nodeRose/30';
+            tag.textContent = 'THERMAL WARNING';
+          } else {
+            tag.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-nodeEmerald/15 text-nodeEmerald';
+            tag.textContent = 'SAFE';
+          }
         }
       }
 
       // Network & Uptime
       if (t.network) {
-        document.getElementById('net-rx-speed').textContent = `${(t.network.rx_kib_s || 0).toFixed(1)} KiB/s`;
-        document.getElementById('net-tx-speed').textContent = `${(t.network.tx_kib_s || 0).toFixed(1)} KiB/s`;
+        safeSetText('net-rx-speed', `${(t.network.rx_kib_s || 0).toFixed(1)} KiB/s`);
+        safeSetText('net-tx-speed', `${(t.network.tx_kib_s || 0).toFixed(1)} KiB/s`);
         const wifiLabel = document.getElementById('wifi-speed-label');
         if (wifiLabel) {
           wifiLabel.textContent = t.network.speed_display || `↓ ${t.network.download_mbps || 0} Mbps / ↑ ${t.network.upload_mbps || 0} Mbps`;
         }
       }
       if (t.storage) {
-        document.getElementById('storage-usage-label').textContent = `Disk: ${t.storage.percent}% (${t.storage.free_gb} GB Free)`;
+        safeSetText('storage-usage-label', `Disk: ${t.storage.percent}% (${t.storage.free_gb} GB Free)`);
       }
       if (t.uptime?.formatted) {
-        document.getElementById('cluster-uptime-badge').textContent = t.uptime.formatted;
-        document.getElementById('cluster-uptime-side').textContent = t.uptime.formatted;
+        safeSetText('cluster-uptime-badge', t.uptime.formatted);
+        safeSetText('cluster-uptime-side', t.uptime.formatted);
       }
 
       // ESP32 Pi-hole Card
@@ -1069,54 +1112,61 @@
         const headerDot = document.getElementById('header-pihole-dot');
         const headerLat = document.getElementById('header-pihole-latency');
 
-        if (isOnline) {
-          pill.className = 'px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-nodeEmerald/15 text-nodeEmerald border border-nodeEmerald/30';
-          pill.textContent = 'ONLINE (200 OK)';
-          headerDot.className = 'w-1.5 h-1.5 rounded-full bg-nodeEmerald';
-          headerLat.textContent = `${esp32.latency_ms || 20} ms`;
-        } else {
-          pill.className = 'px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-nodeRose/20 text-nodeRose border border-nodeRose/30';
-          pill.textContent = 'OFFLINE';
-          headerDot.className = 'w-1.5 h-1.5 rounded-full bg-nodeRose';
-          headerLat.textContent = 'OFFLINE';
+        if (pill) {
+          if (isOnline) {
+            pill.className = 'px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-nodeEmerald/15 text-nodeEmerald border border-nodeEmerald/30';
+            pill.textContent = 'ONLINE (200 OK)';
+          } else {
+            pill.className = 'px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-nodeRose/20 text-nodeRose border border-nodeRose/30';
+            pill.textContent = 'OFFLINE';
+          }
         }
 
-        document.getElementById('pihole-lookups').textContent = esp32.lookups || '2,412';
-        document.getElementById('pihole-blocked').textContent = esp32.blocked_count || '814';
-        document.getElementById('pihole-ratio').textContent = esp32.blocked_percent || '33%';
-        document.getElementById('pihole-rules').textContent = esp32.domains_on_lists || '208,814';
-        document.getElementById('pihole-latency-ms').textContent = `${esp32.latency_ms || esp32.http_latency_ms || '--'} ms`;
-        document.getElementById('pihole-devices').textContent = esp32.devices || '6 Devices';
-        document.getElementById('pihole-uptime').textContent = esp32.uptime || 'Active';
+        if (headerDot) {
+          headerDot.className = isOnline ? 'w-1.5 h-1.5 rounded-full bg-nodeEmerald' : 'w-1.5 h-1.5 rounded-full bg-nodeRose';
+        }
+        if (headerLat) {
+          headerLat.textContent = isOnline ? `${esp32.latency_ms || 20} ms` : 'OFFLINE';
+        }
+
+        safeSetText('pihole-lookups', esp32.lookups || '2,412');
+        safeSetText('pihole-blocked', esp32.blocked_count || '814');
+        safeSetText('pihole-ratio', esp32.blocked_percent || '33%');
+        safeSetText('pihole-rules', esp32.domains_on_lists || '208,814');
+        safeSetText('pihole-latency-ms', `${esp32.latency_ms || esp32.http_latency_ms || '--'} ms`);
+        safeSetText('pihole-devices', esp32.devices || '6 Devices');
+        safeSetText('pihole-uptime', esp32.uptime || 'Active');
       }
 
       // Ping Nodes
       if (pings) {
-        if (pings.gateway?.latency_ms) document.getElementById('net-gateway-latency').textContent = `${pings.gateway.latency_ms} ms`;
-        if (pings.esp32?.latency_ms) document.getElementById('net-esp32-latency').textContent = `${pings.esp32.latency_ms} ms`;
-        if (pings.internet?.latency_ms) document.getElementById('net-internet-latency').textContent = `${pings.internet.latency_ms} ms`;
+        if (pings.gateway?.latency_ms) safeSetText('net-gateway-latency', `${pings.gateway.latency_ms} ms`);
+        if (pings.esp32?.latency_ms) safeSetText('net-esp32-latency', `${pings.esp32.latency_ms} ms`);
+        if (pings.internet?.latency_ms) safeSetText('net-internet-latency', `${pings.internet.latency_ms} ms`);
       }
     }
 
     // View 2: Freelancer Hub Renderer
     function renderFreelancerHub(applied, confirmation, messages, contests = []) {
+      applied = Array.isArray(applied) ? applied : [];
+      confirmation = Array.isArray(confirmation) ? confirmation : [];
+      messages = Array.isArray(messages) ? messages : [];
+      contests = Array.isArray(contests) ? contests : [];
+
       // Badges
-      document.getElementById('tab-count-applied').textContent = applied.length;
-      document.getElementById('tab-count-confirmation').textContent = confirmation.length;
-      const contestBadge = document.getElementById('tab-count-contests');
-      if (contestBadge) contestBadge.textContent = contests.length;
-      document.getElementById('tab-count-messages').textContent = messages.length;
+      safeSetText('tab-count-applied', applied.length);
+      safeSetText('tab-count-confirmation', confirmation.length);
+      safeSetText('tab-count-contests', contests.length);
+      safeSetText('tab-count-messages', messages.length);
 
       const sideBadge = document.getElementById('sidebar-confirm-badge');
       const mobBadge = document.getElementById('mobile-confirm-badge');
       if (confirmation.length > 0) {
-        sideBadge.textContent = confirmation.length;
-        sideBadge.classList.remove('hidden');
-        mobBadge.textContent = confirmation.length;
-        mobBadge.classList.remove('hidden');
+        if (sideBadge) { sideBadge.textContent = confirmation.length; sideBadge.classList.remove('hidden'); }
+        if (mobBadge) { mobBadge.textContent = confirmation.length; mobBadge.classList.remove('hidden'); }
       } else {
-        sideBadge.classList.add('hidden');
-        mobBadge.classList.add('hidden');
+        if (sideBadge) sideBadge.classList.add('hidden');
+        if (mobBadge) mobBadge.classList.add('hidden');
       }
 
       // Render Sub-Tab A: Applied
@@ -1617,60 +1667,55 @@ ${job.proposal || 'Proposal details stored on server.'}
 
     // View 3: Fiverr Inbox Renderer
     function renderFiverrInbox(inbox) {
+      inbox = Array.isArray(inbox) ? inbox : [];
       const container = document.getElementById('fiverr-inbox-container');
       const sideBadge = document.getElementById('sidebar-fiverr-badge');
       const mobBadge = document.getElementById('mobile-fiverr-badge');
 
       if (inbox.length > 0) {
-        sideBadge.textContent = inbox.length;
-        sideBadge.classList.remove('hidden');
-        mobBadge.textContent = inbox.length;
-        mobBadge.classList.remove('hidden');
+        if (sideBadge) { sideBadge.textContent = inbox.length; sideBadge.classList.remove('hidden'); }
+        if (mobBadge) { mobBadge.textContent = inbox.length; mobBadge.classList.remove('hidden'); }
       } else {
-        sideBadge.classList.add('hidden');
-        mobBadge.classList.add('hidden');
+        if (sideBadge) sideBadge.classList.add('hidden');
+        if (mobBadge) mobBadge.classList.add('hidden');
       }
 
-      if (!inbox || inbox.length === 0) {
+      if (!container) return;
+
+      if (inbox.length === 0) {
         container.innerHTML = `
           <div class="bg-surface border border-borderSubtle rounded-2xl p-10 text-center">
             <div class="w-12 h-12 rounded-xl bg-nodeViolet/10 text-nodeViolet mx-auto flex items-center justify-center mb-3">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
             </div>
-            <h3 class="font-heading font-bold text-white text-base">Fiverr Inbox is Clean</h3>
-            <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">The J5 Termux IMAP poller automatically grabs client messages from imap.gmail.com without API tokens or browser automation.</p>
+            <h3 class="font-heading font-bold text-white text-base">Fiverr inbox clean</h3>
+            <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">No unread client messages on your Fiverr hardware gigs.</p>
           </div>
         `;
         return;
       }
 
       container.innerHTML = inbox.map(msg => `
-        <div id="fiverr-card-${msg.id}" class="bg-surface border border-borderSubtle rounded-2xl p-4 sm:p-5 shadow-card space-y-3 transition">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-borderSubtle">
+        <div id="fiverr-card-${msg.id}" class="bg-surface border border-borderSubtle hover:border-nodeViolet/40 rounded-2xl p-4 sm:p-5 shadow-card transition space-y-3">
+          <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <span class="w-8 h-8 rounded-lg bg-nodeViolet/20 text-nodeViolet flex items-center justify-center font-bold text-xs font-mono">FI</span>
-              <div>
-                <div class="text-xs font-bold text-white font-mono">@${msg.sender || 'Client'}</div>
-                <div class="text-[10px] font-mono text-slate-500">${new Date(msg.timestamp).toLocaleString()}</div>
-              </div>
+              <span class="w-2 h-2 rounded-full bg-nodeViolet"></span>
+              <span class="text-xs font-mono font-bold text-nodeViolet">@${msg.sender || 'Client'}</span>
             </div>
-            <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-nodeViolet/20 text-nodeViolet border border-nodeViolet/30 self-start sm:self-auto">
-              ${msg.inquiry_type || 'New Message'}
-            </span>
+            <span class="text-[11px] font-mono text-slate-500">${msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}</span>
           </div>
-
           <div>
-            <h4 class="font-heading font-bold text-white text-sm mb-1">${msg.subject}</h4>
-            <p class="text-xs text-slate-300 leading-relaxed bg-obsidian/40 p-3 rounded-xl border border-borderSubtle select-text">${msg.snippet}</p>
+            <h4 class="font-heading font-semibold text-white text-sm">${msg.subject || 'New Client Message'}</h4>
+            <p class="text-xs text-slate-300 mt-1 line-clamp-3 select-text">${msg.snippet || 'No message content available.'}</p>
           </div>
-
           <div class="flex items-center justify-between pt-2 border-t border-borderSubtle">
-            <button onclick="deleteFiverrMessage('${msg.id}')" class="text-xs font-mono text-slate-400 hover:text-nodeRose transition cursor-pointer">
-              Delete Message
-            </button>
-            <a href="${msg.fiverr_link || 'https://www.fiverr.com/inbox'}" target="_blank" class="px-3 py-1.5 rounded-xl bg-nodeViolet hover:bg-violet-500 text-white font-heading font-bold text-xs transition flex items-center gap-1">
-              <span>Open in Fiverr ↗</span>
+            <a href="${msg.fiverr_link || 'https://www.fiverr.com/inbox'}" target="_blank" class="text-xs font-mono text-nodeViolet hover:underline flex items-center gap-1">
+              <span>Open on Fiverr</span>
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
             </a>
+            <button onclick="dismissFiverrMessage('${msg.id}')" class="text-xs font-mono text-slate-400 hover:text-nodeRose transition cursor-pointer">
+              Mark Read
+            </button>
           </div>
         </div>
       `).join('');

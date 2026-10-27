@@ -59,27 +59,47 @@ PROPOSAL_TEMPLATES_FILE = os.path.join(BASE_DIR, "proposal_templates.json")
 # 1347: KiCad, 1657: 3D Printing / Prototyping
 HARDWARE_SKILL_IDS = [43, 76, 111, 265, 394, 440, 612, 630, 1347, 1657]
 
-# Layer 1: Primary Hardware Design Keywords (Must contain at least ONE)
-PRIMARY_HARDWARE_KEYWORDS = [
-    "kicad", "pcb", "schematic", "gerber", "breadboard", "fritzing",
-    "breakout board", "carrier board", "enclosure", "3d print",
-    "3d-printable", "stl", "step", "case design", "2-layer", "sensor board"
+# Massive Software & Out-of-Scope Blacklist (Instantly Reject)
+SOFTWARE_BLACKLIST = [
+    "app", "software only", "web app", "mobile app", "trading", "bot", "script",
+    "react", "dashboard", "backend", "frontend", "machine learning", "ai",
+    "data entry", "logo", "ui/ux", "website", "seo", "marketing", "writing",
+    "4-layer", "4 layer", "6-layer", "8-layer", "rf", "antenna", "mains", "220v",
+    "110v", "ac power", "mt4", "mt5", "metatrader", "forex", "crypto",
+    "wordpress", "shopify", "ios", "react native", "unity", "unreal", "fpga", "verilog"
 ]
 
-# Layer 2: Secondary Context Keywords (Bonus context only, NOT standalone triggers)
+# Primary PCB Triggers (Instant Approve)
+PRIMARY_PCB_TRIGGERS = [
+    "kicad", "gerber", "pcb design", "pcb layout", "custom pcb",
+    "schematic capture", "bom list", "pcb", "schematic", "2-layer",
+    "breadboard", "fritzing", "breakout board", "carrier board", "sensor board"
+]
+
+# Primary Enclosure Triggers (Instant Approve)
+PRIMARY_ENCLOSURE_TRIGGERS = [
+    "3d printable case", "custom enclosure", "3d printed enclosure",
+    "stl case", "step file case", "electronics enclosure",
+    "enclosure", "3d print", "3d-printable", "case design"
+]
+
+# Microcontroller Trigger Keywords (Conditional Rule)
+MICROCONTROLLER_KEYWORDS = ["esp32", "arduino", "micropython"]
+
+# Required Physical Hardware Modifiers for Microcontroller projects
+PHYSICAL_HARDWARE_MODIFIERS = [
+    "board", "wiring", "breadboard", "pcb", "shield", "case", "enclosure", "hardware"
+]
+
+# Secondary Context Keywords (Bonus context / tags only)
 SECONDARY_CONTEXT_KEYWORDS = [
-    "esp32", "arduino", "relay board", "bom", "stm32", "firmware",
-    "iot", "microcontroller", "embedded", "hardware", "circuit"
+    "relay board", "bom", "stm32", "firmware", "iot", "microcontroller",
+    "embedded", "hardware", "circuit"
 ]
 
-# Strict Blacklist Keywords (Any match in title or description -> reject job)
-BLACKLIST_KEYWORDS = [
-    "trading", "mt4", "mt5", "metatrader", "forex", "crypto",
-    "4-layer", "4 layer", "6-layer", "8-layer", "rf design", "antenna",
-    "high-speed", "mains", "220v", "110v", "ac power",
-    "wordpress", "shopify", "mobile app", "ios", "react native",
-    "unity", "unreal", "fpga", "verilog"
-]
+# Unified keyword lists for telemetry and stats reporting
+PRIMARY_HARDWARE_KEYWORDS = PRIMARY_PCB_TRIGGERS + PRIMARY_ENCLOSURE_TRIGGERS
+BLACKLIST_KEYWORDS = SOFTWARE_BLACKLIST
 
 # Fallback Currency Exchange Rates to USD ($)
 FALLBACK_USD_RATES = {
@@ -319,18 +339,24 @@ def sync_profile_skills(token: str, user_id: int):
 # ---------------------------------------------------------------------------
 def evaluate_project(title: str, description: str, skills: list[str]) -> tuple[bool, str | None, list[str]]:
     """
-    Evaluates project against strict hardware niche rules:
-    1. Rejects any project containing ANY blacklisted term in title or description.
-    2. Requires at least ONE Primary Hardware Design Keyword.
-    3. Captures Secondary Context Keywords as bonus tags only.
+    Evaluates project against strict PCB & Enclosure Sniper rules:
+    1. Instantly rejects if ANY SOFTWARE_BLACKLIST term matches title, description, or skills.
+    2. Enforces Conditional ESP32/Microcontroller Rule: If title/description mentions
+       ['esp32', 'arduino', 'micropython'], REJECT unless description ALSO contains
+       at least one physical hardware modifier ['board', 'wiring', 'breadboard', 'pcb', 'shield', 'case', 'enclosure', 'hardware'].
+    3. Requires at least ONE Primary PCB Trigger or Primary Enclosure Trigger (or step/stl CAD).
+    4. Attaches Secondary Context Keywords as bonus tags.
     """
-    combined = f"{title}\n{description}\n{' '.join(skills)}".lower()
+    clean_title = (title or "").lower()
+    clean_desc = (description or "").lower()
+    clean_skills = [s.lower() for s in (skills or [])]
+    combined = f"{clean_title}\n{clean_desc}\n{' '.join(clean_skills)}"
 
-    # 1. Strict Blacklist Check
+    # 1. Massive Software & Out-of-Scope Blacklist Check
     matched_blacklist = []
-    for bl_kw in BLACKLIST_KEYWORDS:
+    for bl_kw in SOFTWARE_BLACKLIST:
         bl_l = bl_kw.lower()
-        if " " in bl_l or "-" in bl_l:
+        if " " in bl_l or "-" in bl_l or "/" in bl_l:
             if bl_l in combined:
                 matched_blacklist.append(bl_kw)
         else:
@@ -341,36 +367,69 @@ def evaluate_project(title: str, description: str, skills: list[str]) -> tuple[b
     if matched_blacklist:
         return False, f"Blacklisted ({', '.join(matched_blacklist)})", matched_blacklist
 
-    # 2. Layer 1: Primary Hardware Design Keywords (MANDATORY)
+    # 2. Conditional ESP32/Microcontroller Rule
+    # Pure firmware/software coding jobs are rejected unless physical hardware modifiers are present
+    has_mcu = False
+    for mcu_kw in MICROCONTROLLER_KEYWORDS:
+        if re.search(r"\b" + re.escape(mcu_kw) + r"\b", combined):
+            has_mcu = True
+            break
+
+    if has_mcu:
+        has_physical_mod = False
+        for mod_kw in PHYSICAL_HARDWARE_MODIFIERS:
+            if re.search(r"\b" + re.escape(mod_kw) + r"\b", clean_desc) or re.search(r"\b" + re.escape(mod_kw) + r"\b", clean_title):
+                has_physical_mod = True
+                break
+        if not has_physical_mod:
+            return False, "Rejected pure microcontroller code job (missing physical hardware modifier: board, wiring, pcb, shield, case, enclosure)", []
+
+    # 3. Primary PCB Triggers & Primary Enclosure Triggers Check
     matched_primary = []
-    for kw in PRIMARY_HARDWARE_KEYWORDS:
+
+    # Check PCB triggers
+    for kw in PRIMARY_PCB_TRIGGERS:
         kw_l = kw.lower()
         if kw_l == "2-layer":
             if re.search(r"\b2[- ]layer\b", combined):
-                matched_primary.append(kw)
-        elif kw_l == "step":
-            if re.search(r"(?:\.step\b|\bstep\s+(?:file|model|format|cad|3d|export)\b|\b(?:cad|3d|export)\s+step\b)", combined):
-                matched_primary.append(kw)
-        elif kw_l in ["stl", "pcb"]:
-            if re.search(r"\b" + re.escape(kw_l) + r"\b", combined):
                 matched_primary.append(kw)
         elif " " in kw_l or "-" in kw_l:
             if kw_l in combined:
                 matched_primary.append(kw)
         else:
-            pattern = r"\b" + re.escape(kw_l) + r"\b"
-            if re.search(pattern, combined):
+            if re.search(r"\b" + re.escape(kw_l) + r"\b", combined):
                 matched_primary.append(kw)
 
-    if not matched_primary:
-        return False, "No primary hardware design keywords found (pure software/web ignored)", []
+    # Check Enclosure triggers
+    for kw in PRIMARY_ENCLOSURE_TRIGGERS:
+        kw_l = kw.lower()
+        if " " in kw_l or "-" in kw_l:
+            if kw_l in combined:
+                matched_primary.append(kw)
+        else:
+            if re.search(r"\b" + re.escape(kw_l) + r"\b", combined):
+                matched_primary.append(kw)
 
-    # 3. Layer 2: Secondary Context Keywords (Bonus Context)
+    # Special CAD / 3D patterns: STEP file / STL
+    if re.search(r"(?:\.step\b|\bstep\s+(?:file|model|format|cad|3d|export)\b|\b(?:cad|3d|export)\s+step\b)", combined):
+        if "step" not in matched_primary:
+            matched_primary.append("step")
+    if re.search(r"\bstl\b|\.stl\b", combined):
+        if "stl" not in matched_primary:
+            matched_primary.append("stl")
+
+    if not matched_primary:
+        return False, "No primary PCB or Enclosure triggers found (pure software/web ignored)", []
+
+    # 4. Secondary Context Keywords (Bonus Context)
     matched_secondary = []
     for kw in SECONDARY_CONTEXT_KEYWORDS:
         kw_l = kw.lower()
         if re.search(r"\b" + re.escape(kw_l) + r"\b", combined):
             matched_secondary.append(kw)
+    for mcu_kw in MICROCONTROLLER_KEYWORDS:
+        if re.search(r"\b" + re.escape(mcu_kw) + r"\b", combined) and mcu_kw not in matched_secondary:
+            matched_secondary.append(mcu_kw)
 
     all_matched = matched_primary + [k for k in matched_secondary if k not in matched_primary]
     return True, None, all_matched

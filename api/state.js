@@ -56,19 +56,29 @@ export default async function handler(req, res) {
 
   // 2. High-Availability Fallback: Fetch directly from Freelancer API
   const token = process.env.FREELANCER_OAUTH_TOKEN || 'YOUR_FREELANCER_OAUTH_TOKEN';
-  const TARGET_KEYWORDS = [
-    'kicad', 'pcb', 'schematic', 'gerber', 'breadboard', 'fritzing',
-    'breakout board', 'carrier board', 'enclosure', '3d print',
-    '3d-printable', 'stl', 'step', 'case design', 'esp32', 'arduino',
-    'sensor board', 'relay board', '2-layer', 'bom'
+  const SOFTWARE_BLACKLIST = [
+    'app', 'software only', 'web app', 'mobile app', 'trading', 'bot', 'script',
+    'react', 'dashboard', 'backend', 'frontend', 'machine learning', 'ai',
+    'data entry', 'logo', 'ui/ux', 'website', 'seo', 'marketing', 'writing',
+    '4-layer', '4 layer', '6-layer', '8-layer', 'rf', 'antenna', 'mains', '220v',
+    '110v', 'ac power', 'mt4', 'mt5', 'metatrader', 'forex', 'crypto',
+    'wordpress', 'shopify', 'ios', 'react native', 'unity', 'unreal', 'fpga', 'verilog'
   ];
 
-  const BLACKLIST_KEYWORDS = [
-    'trading', 'mt4', 'mt5', 'metatrader', 'forex', 'crypto',
-    '4-layer', '4 layer', '6-layer', 'rf design', 'antenna',
-    'high-speed', 'mains voltage', 'ac power', 'web scraping',
-    'wordpress', 'shopify'
+  const PRIMARY_PCB_TRIGGERS = [
+    'kicad', 'gerber', 'pcb design', 'pcb layout', 'custom pcb',
+    'schematic capture', 'bom list', 'pcb', 'schematic', '2-layer',
+    'breadboard', 'fritzing', 'breakout board', 'carrier board', 'sensor board'
   ];
+
+  const PRIMARY_ENCLOSURE_TRIGGERS = [
+    '3d printable case', 'custom enclosure', '3d printed enclosure',
+    'stl case', 'step file case', 'electronics enclosure',
+    'enclosure', '3d print', '3d-printable', 'case design'
+  ];
+
+  const TARGET_KEYWORDS = [...PRIMARY_PCB_TRIGGERS, ...PRIMARY_ENCLOSURE_TRIGGERS];
+  const BLACKLIST_KEYWORDS = SOFTWARE_BLACKLIST;
 
   try {
     const flUrl = 'https://www.freelancer.com/api/projects/0.1/projects/active/?limit=30&full_description=true&job_details=true';
