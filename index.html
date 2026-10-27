@@ -7,7 +7,7 @@
 
   <!-- PWA & Mobile Web App Meta -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0B0D10">
+  <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Homelab OS">
@@ -32,13 +32,13 @@
             mono: ['"JetBrains Mono"', 'monospace'],
           },
           colors: {
-            obsidian: '#0B0D10',
-            surface: '#12161F',
-            surfaceCard: '#161B26',
-            surfaceHover: '#1C2331',
-            surfaceActive: '#222B3D',
-            borderSubtle: '#222938',
-            borderMuted: '#2D3748',
+            obsidian: '#000000',
+            surface: '#050505',
+            surfaceCard: '#0A0D12',
+            surfaceHover: '#111620',
+            surfaceActive: '#171E2C',
+            borderSubtle: 'rgba(255, 255, 255, 0.08)',
+            borderMuted: 'rgba(255, 255, 255, 0.14)',
             nodeEmerald: '#10B981',
             nodeAmber: '#F59E0B',
             nodeViolet: '#8B5CF6',
@@ -58,16 +58,39 @@
 
   <style>
     body {
-      background-color: #0B0D10;
+      background-color: #000000;
       background-image: 
-        radial-gradient(ellipse 80% 50% at 20% -20%, rgba(16, 185, 129, 0.12), transparent 70%),
-        radial-gradient(circle at 85% 15%, rgba(6, 182, 212, 0.08), transparent 50%),
-        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+        radial-gradient(ellipse 80% 50% at 20% -20%, rgba(16, 185, 129, 0.08), transparent 70%),
+        radial-gradient(circle at 85% 15%, rgba(6, 182, 212, 0.05), transparent 50%),
+        linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
       background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
       color: #F8FAFC;
       min-height: 100vh;
       overflow-x: hidden;
+    }
+
+    /* Floating Liquid Glass Navigation Bar */
+    .liquid-glass-nav {
+      background: rgba(15, 15, 15, 0.45);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Touch-Action & Tactile Response Optimization */
+    button, a, input, select, textarea, [role="button"], .interactive-card, .tab-btn, .mobile-tab-btn {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    /* 60fps hardware accelerated scrolling */
+    .smooth-scroll-container {
+      will-change: transform;
+      -webkit-overflow-scrolling: touch;
+      contain: content;
     }
 
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -125,7 +148,7 @@
   <!-- ============================================================ -->
   <!-- PIN LOCK SCREEN OVERLAY                                      -->
   <!-- ============================================================ -->
-  <div id="pin-screen" class="fixed inset-0 z-50 bg-[#0B0D10]/95 backdrop-blur-xl flex items-center justify-center p-4 transition-opacity duration-300">
+  <div id="pin-screen" class="fixed inset-0 z-50 bg-[#000000]/95 backdrop-blur-xl flex items-center justify-center p-4 transition-opacity duration-300">
     <div class="bg-surface border border-borderSubtle rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-2xl relative text-center">
       <div class="w-14 h-14 rounded-2xl bg-nodeEmerald/10 border border-nodeEmerald/30 mx-auto flex items-center justify-center text-nodeEmerald mb-4 shadow-glowEmerald">
         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,7 +189,7 @@
   <!-- ============================================================ -->
   <!-- MAIN APPLICATION LAYOUT (DESKTOP SIDEBAR + HEADER + VIEWS)   -->
   <!-- ============================================================ -->
-  <div class="flex-1 flex flex-col md:flex-row overflow-hidden pb-16 md:pb-0">
+  <div class="flex-1 flex flex-col md:flex-row overflow-hidden pb-0 md:pb-0">
 
     <!-- DESKTOP LEFT SIDEBAR -->
     <aside class="hidden md:flex flex-col w-64 bg-surface border-r border-borderSubtle flex-shrink-0 select-none">
@@ -306,7 +329,7 @@
       </header>
 
       <!-- VIEW CONTAINER -->
-      <div class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto">
+      <div class="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto pb-28 md:pb-8">
 
         <!-- ======================================================== -->
         <!-- VIEW 1: DASHBOARD (HARDWARE & LAN STATS ONLY, 0 JOBS)    -->
@@ -569,7 +592,7 @@
               <span id="applied-summary-label">Showing all submissions</span>
             </div>
 
-            <div id="applied-jobs-container" class="space-y-3">
+            <div id="applied-jobs-container" class="smooth-scroll-container" class="space-y-3">
               <!-- Dynamically populated cards -->
               <div class="bg-surface border border-borderSubtle rounded-2xl p-8 text-center text-slate-400">
                 <svg class="w-8 h-8 mx-auto mb-2 text-slate-600 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
@@ -590,7 +613,7 @@
               </div>
             </div>
 
-            <div id="confirmation-jobs-container" class="space-y-4">
+            <div id="confirmation-jobs-container" class="smooth-scroll-container" class="space-y-4">
               <!-- Dynamically rendered review cards -->
             </div>
           </div>
@@ -602,7 +625,7 @@
               <span id="contests-summary-label">Scouted via Freelancer Contest API</span>
             </div>
 
-            <div id="contests-container" class="space-y-3">
+            <div id="contests-container" class="smooth-scroll-container" class="space-y-3">
               <!-- Dynamically populated contest cards -->
             </div>
           </div>
@@ -614,7 +637,7 @@
               <span id="fl-messages-count-label">0 Threads</span>
             </div>
 
-            <div id="fl-messages-container" class="space-y-3">
+            <div id="fl-messages-container" class="smooth-scroll-container" class="space-y-3">
               <!-- Dynamically populated message cards -->
             </div>
           </div>
@@ -638,7 +661,7 @@
             </div>
           </div>
 
-          <div id="fiverr-inbox-container" class="space-y-3">
+          <div id="fiverr-inbox-container" class="smooth-scroll-container" class="space-y-3">
             <!-- Dynamically populated Fiverr message cards -->
           </div>
 
@@ -732,31 +755,46 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- MOBILE BOTTOM NAVIGATION BAR                                 -->
+  <!-- FLOATING LIQUID GLASS MOBILE BOTTOM NAV                      -->
   <!-- ============================================================ -->
-  <nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface/95 backdrop-blur-xl border-t border-borderSubtle px-4 flex items-center justify-around z-40 select-none">
-    <button onclick="switchView('dashboard')" id="mobile-nav-dashboard" class="flex flex-col items-center gap-1 text-nodeEmerald cursor-pointer">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-      <span class="text-[10px] font-medium font-heading">Dashboard</span>
-    </button>
+  <div class="md:hidden fixed bottom-4 left-4 right-4 z-50 flex justify-center pointer-events-none select-none">
+    <nav class="liquid-glass-nav pointer-events-auto w-full max-w-md h-16 rounded-[24px] px-3 flex items-center justify-around shadow-2xl transition-all duration-300">
+      
+      <!-- View 1: Dashboard -->
+      <button onclick="switchView('dashboard')" id="mobile-nav-dashboard" class="mobile-tab-btn flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-nodeEmerald bg-nodeEmerald/10 cursor-pointer relative transition-all duration-200 active:scale-95 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.3)]">
+        <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+        </svg>
+        <span class="text-[10px] font-semibold font-heading tracking-tight mt-0.5">Dashboard</span>
+      </button>
 
-    <button onclick="switchView('freelancer')" id="mobile-nav-freelancer" class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer relative">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-      <span class="text-[10px] font-medium font-heading">Freelancer</span>
-      <span id="mobile-confirm-badge" class="absolute -top-1 right-1 w-4 h-4 rounded-full bg-nodeAmber text-obsidian text-[9px] font-mono font-bold flex items-center justify-center hidden">0</span>
-    </button>
+      <!-- View 2: Freelancer Hub -->
+      <button onclick="switchView('freelancer')" id="mobile-nav-freelancer" class="mobile-tab-btn flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95">
+        <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        <span class="text-[10px] font-medium font-heading tracking-tight mt-0.5">Freelancer</span>
+        <span id="mobile-confirm-badge" class="absolute top-1 right-2 min-w-[16px] h-4 px-1 rounded-full bg-nodeAmber text-obsidian text-[9px] font-mono font-bold flex items-center justify-center shadow-sm hidden">0</span>
+      </button>
 
-    <button onclick="switchView('fiverr')" id="mobile-nav-fiverr" class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer relative">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
-      <span class="text-[10px] font-medium font-heading">Fiverr</span>
-      <span id="mobile-fiverr-badge" class="absolute -top-1 right-0 w-4 h-4 rounded-full bg-nodeViolet text-white text-[9px] font-mono font-bold flex items-center justify-center hidden">0</span>
-    </button>
+      <!-- View 3: Fiverr Messages -->
+      <button onclick="switchView('fiverr')" id="mobile-nav-fiverr" class="mobile-tab-btn flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95">
+        <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+        </svg>
+        <span class="text-[10px] font-medium font-heading tracking-tight mt-0.5">Fiverr</span>
+        <span id="mobile-fiverr-badge" class="absolute top-1 right-2 min-w-[16px] h-4 px-1 rounded-full bg-nodeViolet text-white text-[9px] font-mono font-bold flex items-center justify-center shadow-sm hidden">0</span>
+      </button>
 
-    <button onclick="switchView('terminal')" id="mobile-nav-terminal" class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-      <span class="text-[10px] font-medium font-heading">Terminal</span>
-    </button>
-  </nav>
+      <!-- View 4: Live Terminal -->
+      <button onclick="switchView('terminal')" id="mobile-nav-terminal" class="mobile-tab-btn flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95">
+        <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <span class="text-[10px] font-medium font-heading tracking-tight mt-0.5">Terminal</span>
+      </button>
+    </nav>
+  </div>
 
   <!-- ============================================================ -->
   <!-- JAVASCRIPT: CONTROLLER, STATE, REAL-TIME POLLING & PROPOSALS -->
@@ -895,7 +933,7 @@
             sideBtn.className = 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-white bg-surfaceActive border border-borderMuted';
           }
           if (mobBtn) {
-            mobBtn.className = 'flex flex-col items-center gap-1 text-nodeEmerald cursor-pointer relative';
+            mobBtn.className = 'mobile-tab-btn flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-nodeEmerald bg-nodeEmerald/10 cursor-pointer relative transition-all duration-200 active:scale-95 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.3)]';
           }
         } else {
           if (sec) {
@@ -906,7 +944,7 @@
             sideBtn.className = 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-slate-400 hover:text-white hover:bg-surfaceHover';
           }
           if (mobBtn) {
-            mobBtn.className = 'flex flex-col items-center gap-1 text-slate-400 cursor-pointer relative';
+            mobBtn.className = 'mobile-tab-btn flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95';
           }
         }
       });
@@ -966,6 +1004,29 @@
 
     // Render Full State Data Across Views
         // Safe DOM Text Setter
+        // In-memory serialized caches for zero-thrash rendering
+    const RenderCache = {
+      telemetry: null,
+      appliedJobs: null,
+      confirmationJobs: null,
+      contests: null,
+      messages: null,
+      fiverrInbox: null,
+      logs: null,
+      proposalTemplates: null,
+      tunnelUrl: null
+    };
+
+    function deepEqual(a, b) {
+      if (a === b) return true;
+      if (!a || !b) return a === b;
+      try {
+        return JSON.stringify(a) === JSON.stringify(b);
+      } catch (e) {
+        return false;
+      }
+    }
+
     function safeSetText(id, val) {
       const el = document.getElementById(id);
       if (el && val !== undefined && val !== null) {
@@ -977,51 +1038,109 @@
       if (!data) return;
       AppState.stateData = data;
 
-      // Update Tunnel pill
-      if (data.tunnel_url) {
+      // 1. Update Tunnel pill (only if changed)
+      if (data.tunnel_url && data.tunnel_url !== RenderCache.tunnelUrl) {
+        RenderCache.tunnelUrl = data.tunnel_url;
         AppState.tunnelUrl = data.tunnel_url;
         const cleanHost = data.tunnel_url.replace('https://', '').split('.')[0];
         safeSetText('header-tunnel-label', `${cleanHost}.trycloudflare.com`);
       }
 
-      // 1. Telemetry (View 1)
+      // 2. Telemetry (View 1) - Only update if telemetry data changed
       try {
-        renderTelemetry(data.telemetry, data.esp32_pihole, data.network_pings);
+        if (!deepEqual(data.telemetry, RenderCache.telemetry) || !deepEqual(data.esp32_pihole, RenderCache.esp32Pihole) || !deepEqual(data.network_pings, RenderCache.networkPings)) {
+          RenderCache.telemetry = data.telemetry ? JSON.parse(JSON.stringify(data.telemetry)) : null;
+          RenderCache.esp32Pihole = data.esp32_pihole ? JSON.parse(JSON.stringify(data.esp32_pihole)) : null;
+          RenderCache.networkPings = data.network_pings ? JSON.parse(JSON.stringify(data.network_pings)) : null;
+          renderTelemetry(data.telemetry, data.esp32_pihole, data.network_pings);
+        }
       } catch (err) {
         console.error('Error rendering telemetry:', err);
       }
 
-      // 2. Freelancer Hub (View 2)
+      // 3. Freelancer Hub (View 2) - Granular sub-tab deep-compare
       try {
         const applied = Array.isArray(data.applied_jobs) ? data.applied_jobs : [];
         const confirm = Array.isArray(data.needs_confirmation) ? data.needs_confirmation : (Array.isArray(data.jobs) ? data.jobs : []);
         const msgs = Array.isArray(data.freelancer_messages) ? data.freelancer_messages : [];
         const contests = Array.isArray(data.contests) ? data.contests : [];
-        renderFreelancerHub(applied, confirm, msgs, contests);
+
+        // Always update badge counts cleanly
+        safeSetText('tab-count-applied', applied.length);
+        safeSetText('tab-count-confirmation', confirm.length);
+        safeSetText('tab-count-contests', contests.length);
+        safeSetText('tab-count-messages', msgs.length);
+
+        const sideBadge = document.getElementById('sidebar-confirm-badge');
+        const mobBadge = document.getElementById('mobile-confirm-badge');
+        if (confirm.length > 0) {
+          if (sideBadge) { sideBadge.textContent = confirm.length; sideBadge.classList.remove('hidden'); }
+          if (mobBadge) { mobBadge.textContent = confirm.length; mobBadge.classList.remove('hidden'); }
+        } else {
+          if (sideBadge) sideBadge.classList.add('hidden');
+          if (mobBadge) mobBadge.classList.add('hidden');
+        }
+
+        // Only re-render sub-tabs whose data actually changed
+        if (!deepEqual(applied, RenderCache.appliedJobs)) {
+          RenderCache.appliedJobs = JSON.parse(JSON.stringify(applied));
+          renderAppliedTab(applied);
+        }
+        if (!deepEqual(confirm, RenderCache.confirmationJobs)) {
+          RenderCache.confirmationJobs = JSON.parse(JSON.stringify(confirm));
+          renderConfirmationTab(confirm);
+        }
+        if (!deepEqual(contests, RenderCache.contests)) {
+          RenderCache.contests = JSON.parse(JSON.stringify(contests));
+          renderContestsTab(contests);
+        }
+        if (!deepEqual(msgs, RenderCache.messages)) {
+          RenderCache.messages = JSON.parse(JSON.stringify(msgs));
+          renderFreelancerMessages(msgs);
+        }
       } catch (err) {
         console.error('Error rendering freelancer hub:', err);
       }
 
-      // 3. Fiverr Inbox (View 3)
+      // 4. Fiverr Inbox (View 3) - Only re-render if inbox changed
       try {
         const fiverr = Array.isArray(data.fiverr_inbox) ? data.fiverr_inbox : [];
-        renderFiverrInbox(fiverr);
+        const sideFiverrBadge = document.getElementById('sidebar-fiverr-badge');
+        const mobFiverrBadge = document.getElementById('mobile-fiverr-badge');
+        if (fiverr.length > 0) {
+          if (sideFiverrBadge) { sideFiverrBadge.textContent = fiverr.length; sideFiverrBadge.classList.remove('hidden'); }
+          if (mobFiverrBadge) { mobFiverrBadge.textContent = fiverr.length; mobFiverrBadge.classList.remove('hidden'); }
+        } else {
+          if (sideFiverrBadge) sideFiverrBadge.classList.add('hidden');
+          if (mobFiverrBadge) mobFiverrBadge.classList.add('hidden');
+        }
+
+        if (!deepEqual(fiverr, RenderCache.fiverrInbox)) {
+          RenderCache.fiverrInbox = JSON.parse(JSON.stringify(fiverr));
+          renderFiverrInbox(fiverr);
+        }
       } catch (err) {
         console.error('Error rendering fiverr inbox:', err);
       }
 
-      // 4. Live Terminal (View 4)
+      // 5. Live Terminal (View 4) - Only re-render if logs changed
       try {
         const logs = Array.isArray(data.logs) ? data.logs : [];
-        renderTerminalLogs(logs);
+        if (!deepEqual(logs, RenderCache.logs)) {
+          RenderCache.logs = JSON.parse(JSON.stringify(logs));
+          renderTerminalLogs(logs);
+        }
       } catch (err) {
         console.error('Error rendering live terminal:', err);
       }
 
-      // 5. Proposal Templates
+      // 6. Proposal Templates
       if (data.proposal_templates) {
         try {
-          populateProposalTemplateEditor(data.proposal_templates);
+          if (!deepEqual(data.proposal_templates, RenderCache.proposalTemplates)) {
+            RenderCache.proposalTemplates = JSON.parse(JSON.stringify(data.proposal_templates));
+            populateProposalTemplateEditor(data.proposal_templates);
+          }
         } catch (err) {
           console.error('Error populating proposal templates:', err);
         }

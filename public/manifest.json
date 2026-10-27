@@ -4,8 +4,8 @@
   "description": "24/7 Hardware Freelance & Telemetry Command Center",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0B0D10",
-  "theme_color": "#0B0D10",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait-primary",
   "icons": [
     {
