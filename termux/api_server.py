@@ -42,8 +42,6 @@ LOG_FILE = os.path.join(BASE_DIR, "job_bot.log")
 ENV_FILE = os.path.join(BASE_DIR, ".env")
 TUNNEL_FILE = os.path.join(WWW_DIR, "tunnel_url.txt")
 RUN_SCRIPT = os.path.join(BASE_DIR, "run_job_bot.sh")
-HOMEWORK_STATE_FILE = os.path.join(WWW_DIR, "homework_state.json")
-HOMEWORK_PDF_FILE = os.path.join(WWW_DIR, "homework_latest.pdf")
 
 DEFAULT_PIN = "1337"
 HARDWARE_SKILL_IDS = [43, 76, 111, 265, 394, 440, 612, 630, 1347, 1657]
@@ -587,14 +585,6 @@ class J5CommandHandler(BaseHTTPRequestHandler):
             proposal_templates = load_json_file(PROPOSAL_TEMPLATES_FILE, {})
             logs = get_last_log_lines(60)
             telemetry = get_cached_telemetry(force=False)
-            homework_state = load_json_file(HOMEWORK_STATE_FILE, {
-                "status": "Pending",
-                "target_date": datetime.now().strftime("%Y-%m-%d"),
-                "tomorrow_lessons": [],
-                "tomorrow_homework": [],
-                "pdf_url": "/homework_latest.pdf",
-                "alerts": []
-            })
 
             tunnel = ""
             if os.path.exists(TUNNEL_FILE):
@@ -624,21 +614,8 @@ class J5CommandHandler(BaseHTTPRequestHandler):
                 "telemetry": telemetry,
                 "esp32_pihole": dict(esp32_pihole_state),
                 "network_pings": dict(ping_state),
-                "homework": homework_state,
             }
             self.send_json(200, response)
-            return
-
-        if path in ["/api/homework", "/api/homework-state"]:
-            hw = load_json_file(HOMEWORK_STATE_FILE, {
-                "status": "Pending",
-                "target_date": datetime.now().strftime("%Y-%m-%d"),
-                "tomorrow_lessons": [],
-                "tomorrow_homework": [],
-                "pdf_url": "/homework_latest.pdf",
-                "alerts": []
-            })
-            self.send_json(200, {"status": "success", "homework": hw})
             return
 
         if path in ["/api/contests", "/api/matched-contests"]:
@@ -1054,27 +1031,6 @@ class J5CommandHandler(BaseHTTPRequestHandler):
                 return
             except Exception as e:
                 self.send_json(500, {"error": f"Failed to initiate scan: {e}"})
-                return
-
-        # Route: Force Homework Bot Run Now
-        if path in ["/api/homework/run", "/api/homework-run"]:
-            if not self.is_authenticated(body):
-                self.send_json(401, {"error": "Unauthorized: Invalid or missing X-Auth-Pin"})
-                return
-            try:
-                python_bin = sys.executable or "/data/data/com.termux/files/usr/bin/python"
-                hw_script = os.path.join(BASE_DIR, "j5_homework_solver.py")
-                if not os.path.exists(hw_script):
-                    hw_script = os.path.join(BASE_DIR, "homework_bot.py")
-                subprocess.Popen([python_bin, hw_script, "--force"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                self.send_json(200, {
-                    "status": "success",
-                    "message": "Autonomous 5-Agent Homework Solver triggered in background",
-                    "triggered_at": datetime.now(timezone.utc).isoformat()
-                })
-                return
-            except Exception as ex:
-                self.send_json(500, {"error": f"Failed to trigger homework bot: {ex}"})
                 return
 
         # Route: Mark Fiverr Message Read

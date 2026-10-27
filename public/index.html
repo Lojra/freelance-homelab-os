@@ -217,15 +217,6 @@
           <span id="sidebar-fiverr-badge" class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-nodeViolet/20 text-nodeViolet border border-nodeViolet/30 hidden">0</span>
         </button>
 
-        <!-- View 4: Homework Bot -->
-        <button onclick="switchView('homework')" id="nav-btn-homework" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-slate-400 hover:text-white hover:bg-surfaceHover">
-          <svg class="w-4 h-4 text-nodeAmber" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-          </svg>
-          <span class="flex-1 text-left">Homework Bot</span>
-          <span id="sidebar-homework-badge" class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-nodeEmerald/20 text-nodeEmerald border border-nodeEmerald/30">DONE</span>
-        </button>
-
         <!-- View 5: Live Terminal (At Very Bottom) -->
         <button onclick="switchView('terminal')" id="nav-btn-terminal" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-slate-400 hover:text-white hover:bg-surfaceHover">
           <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -732,91 +723,7 @@
 
         </section>
 
-        <!-- ======================================================== -->
-        <!-- VIEW 5: AUTONOMOUS HOMEWORK BOT                          -->
-        <!-- ======================================================== -->
-        <section id="view-homework" class="space-y-6 hidden">
-
-          <!-- Banner & Dynamic Status Badge -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-borderSubtle">
-            <div>
-              <h1 class="font-heading text-xl sm:text-2xl font-bold text-white tracking-tight">Autonomous Homework Arena</h1>
-              <p class="text-xs text-slate-400 mt-0.5">Gemini 1.5 Flash multimodal solver, Albanian school schedule &amp; daily PDF packages.</p>
-            </div>
-            <div class="flex items-center gap-3">
-              <span id="hw-status-badge" class="px-3.5 py-1.5 rounded-xl bg-nodeEmerald/15 text-nodeEmerald border border-nodeEmerald/30 text-xs font-heading font-bold shadow-glowEmerald flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-nodeEmerald pulse-dot"></span>
-                <span id="hw-status-text">HOMEWORK: DONE</span>
-              </span>
-              <button onclick="triggerHomeworkRun()" id="hw-trigger-btn" class="px-3.5 py-1.5 rounded-xl bg-nodeAmber hover:bg-amber-400 text-obsidian font-heading font-bold text-xs shadow-glowAmber transition cursor-pointer active:scale-95 flex items-center gap-1.5">
-                <span>Run Solver Now ⚡</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- BENTO GRID: HOMEWORK -->
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            <!-- Card 1: Tomorrow's Schedule (1 Col) -->
-            <div class="bg-surface border border-borderSubtle rounded-2xl p-5 shadow-card space-y-4">
-              <div class="flex items-center justify-between pb-2 border-b border-borderSubtle">
-                <div>
-                  <h3 class="font-heading font-bold text-white text-sm">Tomorrow's Work Schedule</h3>
-                  <span class="text-[11px] font-mono text-slate-400" id="hw-target-date-label">Target: Loading...</span>
-                </div>
-                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-nodeCyan/20 text-nodeCyan border border-nodeCyan/30">ALBANIAN HIGH SCHOOL</span>
-              </div>
-
-              <div class="space-y-2">
-                <div class="text-[11px] font-mono text-slate-400">PLANNED LESSONS:</div>
-                <div id="hw-lessons-container" class="flex flex-wrap gap-2">
-                  <!-- Dynamically populated lessons pills -->
-                </div>
-              </div>
-
-              <div class="pt-3 border-t border-borderSubtle text-[11px] font-mono text-slate-500">
-                <span>Auto-configured via Tirana CET school calendar.</span>
-              </div>
-            </div>
-
-            <!-- Card 2: Completed Homework Tasks & PDF (2 Cols) -->
-            <div class="lg:col-span-2 bg-surface border border-borderSubtle rounded-2xl p-5 shadow-card space-y-4">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-borderSubtle">
-                <div>
-                  <h3 class="font-heading font-bold text-white text-sm">Tomorrow's Homework Tasks &amp; Solutions</h3>
-                  <span class="text-[11px] font-mono text-slate-400" id="hw-tasks-count-label">0 Tasks Solved</span>
-                </div>
-
-                <!-- High-Contrast Open PDF Button -->
-                <a id="hw-pdf-link" href="#" target="_blank" class="px-4 py-2 rounded-xl bg-nodeEmerald hover:bg-emerald-400 text-obsidian font-heading font-bold text-xs tracking-wide shadow-glowEmerald transition cursor-pointer active:scale-95 flex items-center gap-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                  <span>Open PDF Solutions ↗</span>
-                </a>
-              </div>
-
-              <div id="hw-tasks-container" class="space-y-3">
-                <!-- Dynamically rendered homework task cards -->
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Card 3: Alerts & Discord Dispatch Log -->
-          <div class="bg-surface border border-borderSubtle rounded-2xl p-5 shadow-card space-y-3">
-            <div class="flex items-center justify-between pb-2 border-borderSubtle border-b">
-              <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-nodeAmber"></span>
-                <h3 class="font-heading font-bold text-white text-sm">Pipeline Alerts &amp; Discord Dispatch Log</h3>
-              </div>
-              <span class="text-[11px] font-mono text-slate-500" id="hw-last-generated-time">--</span>
-            </div>
-
-            <div id="hw-alerts-container" class="bg-obsidian/60 p-3 rounded-xl border border-borderSubtle font-mono text-xs space-y-1 text-slate-300">
-              <div class="text-slate-500">// Waiting for pipeline telemetry...</div>
-            </div>
-          </div>
-
-        </section>
+        
 
       </div>
     </main>
@@ -841,12 +748,6 @@
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
       <span class="text-[10px] font-medium font-heading">Fiverr</span>
       <span id="mobile-fiverr-badge" class="absolute -top-1 right-0 w-4 h-4 rounded-full bg-nodeViolet text-white text-[9px] font-mono font-bold flex items-center justify-center hidden">0</span>
-    </button>
-
-    <button onclick="switchView('homework')" id="mobile-nav-homework" class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer relative">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-      <span class="text-[10px] font-medium font-heading">Homework</span>
-      <span id="mobile-homework-dot" class="absolute -top-1 right-1 w-2 h-2 rounded-full bg-nodeEmerald hidden"></span>
     </button>
 
     <button onclick="switchView('terminal')" id="mobile-nav-terminal" class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer">
@@ -978,14 +879,7 @@
       triggerHaptic('light');
       AppState.currentView = viewName;
 
-      if (viewName === 'homework') {
-        if (AppState.stateData && AppState.stateData.homework) {
-          renderHomeworkView(AppState.stateData.homework);
-        }
-        fetchHomeworkState();
-      }
-
-      ['dashboard', 'freelancer', 'fiverr', 'terminal', 'homework'].forEach(v => {
+      ['dashboard', 'freelancer', 'fiverr', 'terminal'].forEach(v => {
         const sec = document.getElementById(`view-${v}`);
         const sideBtn = document.getElementById(`nav-btn-${v}`);
         const mobBtn = document.getElementById(`mobile-nav-${v}`);
@@ -1094,11 +988,6 @@
       // Proposal Templates
       if (data.proposal_templates) {
         populateProposalTemplateEditor(data.proposal_templates);
-      }
-
-      // Homework Bot (View 5)
-      if (data.homework) {
-        renderHomeworkView(data.homework);
       }
     }
 
@@ -1917,176 +1806,7 @@ ${job.proposal || 'Proposal details stored on server.'}
       const tab = params.get('tab');
 
 
-    // View 5: Autonomous Homework Bot Renderer
-    function renderHomeworkView(hw) {
-      if (!hw) return;
-      if (AppState.stateData) {
-        AppState.stateData.homework = hw;
-      }
-
-      const statusBadge = document.getElementById('hw-status-badge');
-      const statusText = document.getElementById('hw-status-text');
-      const sideBadge = document.getElementById('sidebar-homework-badge');
-      const mobDot = document.getElementById('mobile-homework-dot');
-
-      const isDone = (hw.status === 'Done');
-      const isProcessing = (hw.status === 'Processing');
-
-      if (isDone) {
-        if (statusBadge) statusBadge.className = 'px-3.5 py-1.5 rounded-xl bg-nodeEmerald/15 text-nodeEmerald border border-nodeEmerald/30 text-xs font-heading font-bold shadow-glowEmerald flex items-center gap-2';
-        if (statusText) statusText.textContent = "TODAY'S HOMEWORK: COMPLETED ✅";
-        if (sideBadge) {
-          sideBadge.className = 'px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-nodeEmerald/20 text-nodeEmerald border border-nodeEmerald/30';
-          sideBadge.textContent = 'DONE';
-          sideBadge.classList.remove('hidden');
-        }
-        if (mobDot) mobDot.classList.remove('hidden');
-      } else if (isProcessing) {
-        if (statusBadge) statusBadge.className = 'px-3.5 py-1.5 rounded-xl bg-nodeCyan/20 text-nodeCyan border border-nodeCyan/30 text-xs font-heading font-bold shadow-glowCyan flex items-center gap-2';
-        if (statusText) statusText.textContent = "PROCESSING WITH GEMINI 1.5 FLASH ⚡";
-        if (sideBadge) {
-          sideBadge.className = 'px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-nodeCyan/20 text-nodeCyan border border-nodeCyan/30';
-          sideBadge.textContent = 'SOLVING';
-          sideBadge.classList.remove('hidden');
-        }
-      } else {
-        if (statusBadge) statusBadge.className = 'px-3.5 py-1.5 rounded-xl bg-nodeAmber/15 text-nodeAmber border border-nodeAmber/30 text-xs font-heading font-bold flex items-center gap-2';
-        if (statusText) statusText.textContent = "HOMEWORK PENDING (TARGET 18:00) ⏳";
-        if (sideBadge) {
-          sideBadge.className = 'px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-nodeAmber/20 text-nodeAmber border border-nodeAmber/30';
-          sideBadge.textContent = 'PENDING';
-          sideBadge.classList.remove('hidden');
-        }
-      }
-
-      // Schedule Lessons
-      const dateLabel = document.getElementById('hw-target-date-label');
-      if (dateLabel) dateLabel.textContent = `Target Due Date: ${hw.target_date || 'Tomorrow'}`;
-      const lessonsContainer = document.getElementById('hw-lessons-container');
-      const lessons = hw.tomorrow_lessons || [];
-      if (lessonsContainer) {
-        if (lessons.length === 0) {
-          lessonsContainer.innerHTML = '<span class="text-xs text-slate-500 font-mono">No lessons scheduled (Weekend / Holiday).</span>';
-        } else {
-          const colorMap = {
-            'Maths': 'bg-nodeCyan/15 text-nodeCyan border-nodeCyan/30',
-            'Physics': 'bg-nodeViolet/15 text-nodeViolet border-nodeViolet/30',
-            'C++ / IT': 'bg-nodeEmerald/15 text-nodeEmerald border-nodeEmerald/30',
-            'English': 'bg-emerald-900/30 text-emerald-300 border-emerald-500/30',
-            'Eng. Lit.': 'bg-nodeAmber/15 text-nodeAmber border-nodeAmber/30',
-            'Literature': 'bg-amber-900/30 text-amber-300 border-amber-500/30',
-            'Biology': 'bg-lime-900/30 text-lime-300 border-lime-500/30',
-            'German': 'bg-orange-900/30 text-orange-300 border-orange-500/30',
-            'Technology': 'bg-cyan-900/30 text-cyan-300 border-cyan-500/30',
-            'Economics': 'bg-slate-800 text-slate-300 border-slate-700',
-          };
-          lessonsContainer.innerHTML = lessons.map(l => {
-            const cls = colorMap[l] || 'bg-obsidian text-slate-300 border-borderSubtle';
-            return `<span class="px-3 py-1 rounded-xl text-xs font-mono font-semibold border ${cls}">${l}</span>`;
-          }).join('');
-        }
-      }
-
-      // Tasks Container
-      const tasksContainer = document.getElementById('hw-tasks-container');
-      const tasks = hw.tomorrow_homework || [];
-      const countLabel = document.getElementById('hw-tasks-count-label');
-      if (countLabel) countLabel.textContent = `${tasks.length} Completed Assignment(s)`;
-
-      const pdfLink = document.getElementById('hw-pdf-link');
-      if (pdfLink) {
-        if (hw.pdf_url) {
-          const baseUrl = AppState.tunnelUrl ? AppState.tunnelUrl.replace(/\/$/, '') : '';
-          pdfLink.href = `${baseUrl}${hw.pdf_url}`;
-          pdfLink.classList.remove('pointer-events-none', 'opacity-50');
-        } else {
-          pdfLink.classList.add('pointer-events-none', 'opacity-50');
-        }
-      }
-
-      if (tasksContainer) {
-        if (tasks.length === 0) {
-          tasksContainer.innerHTML = `
-            <div class="bg-obsidian/40 border border-borderSubtle rounded-xl p-8 text-center text-slate-400">
-              <svg class="w-8 h-8 mx-auto mb-2 text-nodeEmerald" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              <p class="font-heading font-bold text-white text-sm">No homework due for tomorrow!</p>
-              <p class="text-xs text-slate-400 mt-0.5">The school portal has no pending exercises for ${hw.target_date || 'tomorrow'}.</p>
-            </div>
-          `;
-        } else {
-          tasksContainer.innerHTML = tasks.map((t, idx) => `
-            <div class="bg-obsidian/50 border border-borderSubtle hover:border-nodeEmerald/40 rounded-xl p-4 shadow-sm transition space-y-2.5">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div class="flex items-center gap-2">
-                  <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-nodeEmerald/20 text-nodeEmerald border border-nodeEmerald/30">
-                    ${t.subject || 'General'}
-                  </span>
-                  <span class="text-xs font-bold text-white font-heading">${t.title}</span>
-                </div>
-                <span class="text-[10px] font-mono text-nodeCyan">${t.engine || 'Gemini 1.5 Flash'}</span>
-              </div>
-
-              <!-- Boxed Final Answer -->
-              <div class="bg-obsidian p-2.5 rounded-lg border border-borderSubtle text-xs font-mono text-nodeEmerald font-semibold flex items-center justify-between">
-                <span>🎯 ${t.final_answer || 'Zgjidhur me sukses.'}</span>
-              </div>
-
-              <!-- Expandable Solution Accordion -->
-              <button onclick="toggleProposalAccordion('hw-sol-${idx}')" class="text-[11px] font-mono text-nodeCyan hover:text-cyan-300 flex items-center gap-1 cursor-pointer">
-                <span>Shiko Zgjidhjen e Plotë Pedagogjike</span>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-              </button>
-
-              <div id="hw-sol-${idx}" class="hidden pt-2 text-xs font-mono text-slate-300 bg-obsidian/80 p-3 rounded-lg border border-borderSubtle whitespace-pre-wrap leading-relaxed select-text max-h-64 overflow-y-auto">
-                ${escapeHtml(t.solution || '')}
-              </div>
-            </div>
-          `).join('');
-        }
-      }
-
-      // Alerts Container
-      const alertsContainer = document.getElementById('hw-alerts-container');
-      const alerts = hw.alerts || [];
-      if (alertsContainer) {
-        if (alerts.length === 0) {
-          alertsContainer.innerHTML = '<div class="text-slate-500">// Zero warnings or errors. Pipeline healthy.</div>';
-        } else {
-          alertsContainer.innerHTML = alerts.map(a => `<div class="text-slate-300 font-mono leading-relaxed">• ${escapeHtml(a)}</div>`).join('');
-        }
-      }
-      const lastGen = document.getElementById('hw-last-generated-time');
-      if (lastGen && hw.generated_at) {
-        lastGen.textContent = `Generated: ${new Date(hw.generated_at).toLocaleTimeString()}`;
-      }
-    }
-
-    // Trigger Instant Homework Bot Run on J5
-    async function triggerHomeworkRun() {
-      triggerHaptic('medium');
-      const btn = document.getElementById('hw-trigger-btn');
-      if (btn) btn.disabled = true;
-
-      try {
-        const resp = await fetch('/api/homework/run', {
-          method: 'POST',
-          headers: getApiHeaders()
-        });
-        if (resp.ok) {
-          triggerHaptic('success');
-          alert('⚡ Homework Bot initiated on Samsung J5! Solving via Gemini 1.5 Flash API...');
-          setTimeout(() => fetchState(false), 2500);
-        } else {
-          alert('Failed to trigger Homework Bot.');
-        }
-      } catch (e) {
-        alert('Could not trigger Homework Bot: ' + e.message);
-      } finally {
-        if (btn) btn.disabled = false;
-      }
-    }
-
-      if (view && ['dashboard', 'freelancer', 'fiverr', 'terminal', 'homework'].includes(view)) {
+      if (view && ['dashboard', 'freelancer', 'fiverr', 'terminal'].includes(view)) {
         switchView(view);
       }
       if (tab && ['applied', 'confirmation', 'contests', 'messages'].includes(tab)) {

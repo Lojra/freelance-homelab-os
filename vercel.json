@@ -9,16 +9,8 @@
   },
   "routes": [
     {
-      "src": "/api/homework/run",
-      "dest": "/api/homework"
-    },
-    {
       "src": "/api/(.*)",
       "dest": "/api/$1"
-    },
-    {
-      "src": "/homework_latest.pdf",
-      "dest": "https://your-tunnel.trycloudflare.com"
     },
     {
       "src": "/(.*)",
