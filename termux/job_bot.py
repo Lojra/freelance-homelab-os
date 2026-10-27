@@ -1403,10 +1403,10 @@ def run_cycle():
     # 4. Poll Freelancer Unread Messages
     poll_unread_messages(token, user_id, discord_webhook)
 
-    # 5. Poll Fiverr IMAP Emails
-    poll_fiverr_imap(discord_webhook)
+    # Note: Fiverr IMAP has been decoupled into dedicated fiverr_bot.py (staggered cron)
+    # poll_fiverr_imap(discord_webhook)
 
-    # 6. Write Stats JSON
+    # 5. Write Stats JSON
     write_stats_json()
 
     elapsed = round(time.time() - start_time, 2)

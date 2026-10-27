@@ -1,0 +1,18 @@
+SHELL=/data/data/com.termux/files/usr/bin/bash
+PATH=/data/data/com.termux/files/usr/bin:/data/data/com.termux/files/usr/bin/applets
+LD_PRELOAD=/data/data/com.termux/files/usr/lib/libc++_shared.so
+HOME=/data/data/com.termux/files/home
+PREFIX=/data/data/com.termux/files/usr
+
+# ==============================================================================
+# J5 STAGGERED ZERO-COLLISION CRON SCHEDULE (PREVENTS 100% CPU SPIKES)
+# ==============================================================================
+
+# 1. Freelancer 2-Tier Hardware & Contest Scout: Every 15 mins (at :00, :15, :30, :45)
+0,15,30,45 * * * * /data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/job_bot.py >> /data/data/com.termux/files/home/job_bot.log 2>&1
+
+# 2. Fiverr IMAP Zero-Ban Client Inbox: Every 10 mins staggered (at :07, :17, :27, :37, :47, :57)
+7,17,27,37,47,57 * * * * /data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/fiverr_bot.py >> /data/data/com.termux/files/home/fiverr_bot.log 2>&1
+
+# 3. Autonomous Homework Solver: Staggered every 30 mins (at :22, :52)
+22,52 * * * * /data/data/com.termux/files/usr/bin/python /data/data/com.termux/files/home/homework_bot.py >> /data/data/com.termux/files/home/homework_bot.log 2>&1

@@ -42,6 +42,8 @@ LOG_FILE = os.path.join(BASE_DIR, "job_bot.log")
 ENV_FILE = os.path.join(BASE_DIR, ".env")
 TUNNEL_FILE = os.path.join(WWW_DIR, "tunnel_url.txt")
 RUN_SCRIPT = os.path.join(BASE_DIR, "run_job_bot.sh")
+HOMEWORK_STATE_FILE = os.path.join(WWW_DIR, "homework_state.json")
+HOMEWORK_PDF_FILE = os.path.join(WWW_DIR, "homework_latest.pdf")
 
 DEFAULT_PIN = "1337"
 HARDWARE_SKILL_IDS = [43, 76, 111, 265, 394, 440, 612, 630, 1347, 1657]
@@ -429,9 +431,20 @@ def sample_telemetry():
         t["network"]["tx_bytes"] = tx_now
 
         if net_state["last_rx"] > 0 and rx_now >= net_state["last_rx"]:
-            net_state["rx_kib_s"] = round(((rx_now - net_state["last_rx"]) / dt) / 1024.0, 1)
+            delta_rx = rx_now - net_state["last_rx"]
+            net_state["rx_kib_s"] = round((delta_rx / dt) / 1024.0, 1)
+            net_state["rx_mbps"] = round((delta_rx * 8.0) / (dt * 1_000_000.0), 2)
+        else:
+            net_state["rx_kib_s"] = 0.0
+            net_state["rx_mbps"] = 0.0
+
         if net_state["last_tx"] > 0 and tx_now >= net_state["last_tx"]:
-            net_state["tx_kib_s"] = round(((tx_now - net_state["last_tx"]) / dt) / 1024.0, 1)
+            delta_tx = tx_now - net_state["last_tx"]
+            net_state["tx_kib_s"] = round((delta_tx / dt) / 1024.0, 1)
+            net_state["tx_mbps"] = round((delta_tx * 8.0) / (dt * 1_000_000.0), 2)
+        else:
+            net_state["tx_kib_s"] = 0.0
+            net_state["tx_mbps"] = 0.0
 
         net_state["last_time"] = now
         net_state["last_rx"] = rx_now
@@ -439,6 +452,9 @@ def sample_telemetry():
 
         t["network"]["rx_kib_s"] = net_state["rx_kib_s"]
         t["network"]["tx_kib_s"] = net_state["tx_kib_s"]
+        t["network"]["download_mbps"] = net_state["rx_mbps"]
+        t["network"]["upload_mbps"] = net_state["tx_mbps"]
+        t["network"]["speed_display"] = f"↓ {net_state['rx_mbps']} Mbps / ↑ {net_state['tx_mbps']} Mbps" 
     except Exception:
         pass
 
@@ -451,19 +467,37 @@ def sample_telemetry():
     return t
 
 
+# Telemetry Cache to throttle API and eliminate CPU spikes from rapid frontend polling
+CACHED_TELEMETRY = None
+LAST_TELEMETRY_TIME = 0.0
+TELEMETRY_CACHE_TTL = 15.0  # Cache telemetry for at least 15 seconds
+
+def get_cached_telemetry(force: bool = False) -> dict:
+    global CACHED_TELEMETRY, LAST_TELEMETRY_TIME
+    now = time.time()
+    if not force and CACHED_TELEMETRY and (now - LAST_TELEMETRY_TIME < TELEMETRY_CACHE_TTL):
+        return CACHED_TELEMETRY
+    try:
+        sample_pings()
+    except Exception:
+        pass
+    CACHED_TELEMETRY = sample_telemetry()
+    LAST_TELEMETRY_TIME = now
+    return CACHED_TELEMETRY
+
+
 def telemetry_background_loop():
-    """Background sampler keeping rolling history and ping metrics updated."""
+    """Lightweight background sampler running every 20s to keep rolling history warm without CPU spikes."""
     counter = 0
     while True:
         try:
-            sample_telemetry()
-            # Every ~12s (3 iterations * 4s), update network ping latency
             if counter % 3 == 0:
                 sample_pings()
+            get_cached_telemetry(force=True)
         except Exception:
             pass
         counter += 1
-        time.sleep(4)
+        time.sleep(20)
 
 
 class J5CommandHandler(BaseHTTPRequestHandler):
@@ -552,7 +586,15 @@ class J5CommandHandler(BaseHTTPRequestHandler):
             freelancer_msgs = load_json_file(FREELANCER_MSGS_FILE, [])
             proposal_templates = load_json_file(PROPOSAL_TEMPLATES_FILE, {})
             logs = get_last_log_lines(60)
-            telemetry = sample_telemetry()
+            telemetry = get_cached_telemetry(force=False)
+            homework_state = load_json_file(HOMEWORK_STATE_FILE, {
+                "status": "Pending",
+                "target_date": datetime.now().strftime("%Y-%m-%d"),
+                "tomorrow_lessons": [],
+                "tomorrow_homework": [],
+                "pdf_url": "/homework_latest.pdf",
+                "alerts": []
+            })
 
             tunnel = ""
             if os.path.exists(TUNNEL_FILE):
@@ -582,8 +624,21 @@ class J5CommandHandler(BaseHTTPRequestHandler):
                 "telemetry": telemetry,
                 "esp32_pihole": dict(esp32_pihole_state),
                 "network_pings": dict(ping_state),
+                "homework": homework_state,
             }
             self.send_json(200, response)
+            return
+
+        if path in ["/api/homework", "/api/homework-state"]:
+            hw = load_json_file(HOMEWORK_STATE_FILE, {
+                "status": "Pending",
+                "target_date": datetime.now().strftime("%Y-%m-%d"),
+                "tomorrow_lessons": [],
+                "tomorrow_homework": [],
+                "pdf_url": "/homework_latest.pdf",
+                "alerts": []
+            })
+            self.send_json(200, {"status": "success", "homework": hw})
             return
 
         if path in ["/api/contests", "/api/matched-contests"]:
@@ -647,6 +702,7 @@ class J5CommandHandler(BaseHTTPRequestHandler):
                 ".log": "text/plain; charset=utf-8",
                 ".svg": "image/svg+xml",
                 ".png": "image/png",
+                ".pdf": "application/pdf",
                 ".ico": "image/x-icon",
             }
             ct = content_types.get(ext, "application/octet-stream")
@@ -998,6 +1054,25 @@ class J5CommandHandler(BaseHTTPRequestHandler):
                 return
             except Exception as e:
                 self.send_json(500, {"error": f"Failed to initiate scan: {e}"})
+                return
+
+        # Route: Force Homework Bot Run Now
+        if path in ["/api/homework/run", "/api/homework-run"]:
+            if not self.is_authenticated(body):
+                self.send_json(401, {"error": "Unauthorized: Invalid or missing X-Auth-Pin"})
+                return
+            try:
+                python_bin = sys.executable or "/data/data/com.termux/files/usr/bin/python"
+                hw_script = os.path.join(BASE_DIR, "homework_bot.py")
+                subprocess.Popen([python_bin, hw_script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                self.send_json(200, {
+                    "status": "success",
+                    "message": "Autonomous Homework Bot triggered in background",
+                    "triggered_at": datetime.now(timezone.utc).isoformat()
+                })
+                return
+            except Exception as ex:
+                self.send_json(500, {"error": f"Failed to trigger homework bot: {ex}"})
                 return
 
         # Route: Mark Fiverr Message Read

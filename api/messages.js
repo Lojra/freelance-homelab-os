@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   }
 
   const overrideTunnel = req.headers['x-tunnel-url'] || req.query?.tunnel_url;
-  const j5Url = (overrideTunnel && String(overrideTunnel).trim()) || process.env.J5_TUNNEL_URL || 'https://subsequently-skip-breath-pizza.trycloudflare.com';
+  const j5Url = (overrideTunnel && String(overrideTunnel).trim()) || process.env.J5_TUNNEL_URL || 'https://your-tunnel.trycloudflare.com';
 
   if (j5Url) {
     try {

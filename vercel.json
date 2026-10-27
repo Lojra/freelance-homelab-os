@@ -1,17 +1,28 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/public/$1" }
-  ],
-  "headers": [
+  "cleanUrls": true,
+  "env": {
+    "FREELANCER_OAUTH_TOKEN": "YOUR_FREELANCER_OAUTH_TOKEN",
+    "FREELANCER_USER_ID": "YOUR_FREELANCER_USER_ID",
+    "API_AUTH_PIN": "1337",
+    "J5_TUNNEL_URL": "https://your-tunnel.trycloudflare.com"
+  },
+  "routes": [
     {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" }
-      ]
+      "src": "/api/homework/run",
+      "dest": "/api/homework"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/homework_latest.pdf",
+      "dest": "https://your-tunnel.trycloudflare.com"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
     }
   ]
 }
