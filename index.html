@@ -72,11 +72,25 @@
 
     /* Floating Liquid Glass Navigation Bar */
     .liquid-glass-nav {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      width: calc(100% - 32px);
+      max-width: 480px;
+      margin: 0 auto;
+      right: 16px;
+      height: 64px;
+      border-radius: 24px;
+      z-index: 100;
       background: rgba(15, 15, 15, 0.45);
       backdrop-filter: blur(16px) saturate(180%);
       -webkit-backdrop-filter: blur(16px) saturate(180%);
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 8px;
     }
 
     /* Touch-Action & Tactile Response Optimization */
@@ -148,7 +162,7 @@
   <!-- ============================================================ -->
   <!-- PIN LOCK SCREEN OVERLAY                                      -->
   <!-- ============================================================ -->
-  <div id="pin-screen" class="fixed inset-0 z-50 bg-[#000000]/95 backdrop-blur-xl flex items-center justify-center p-4 transition-opacity duration-300">
+  <div id="pin-screen" class="fixed inset-0 z-[200] bg-[#000000]/95 backdrop-blur-xl flex items-center justify-center p-4 transition-opacity duration-300">
     <div class="bg-surface border border-borderSubtle rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-2xl relative text-center">
       <div class="w-14 h-14 rounded-2xl bg-nodeEmerald/10 border border-nodeEmerald/30 mx-auto flex items-center justify-center text-nodeEmerald mb-4 shadow-glowEmerald">
         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -757,44 +771,42 @@
   <!-- ============================================================ -->
   <!-- FLOATING LIQUID GLASS MOBILE BOTTOM NAV                      -->
   <!-- ============================================================ -->
-  <div class="md:hidden fixed bottom-4 left-4 right-4 z-50 flex justify-center pointer-events-none select-none">
-    <nav class="liquid-glass-nav pointer-events-auto w-full max-w-md h-16 rounded-[24px] px-3 flex items-center justify-around shadow-2xl transition-all duration-300">
-      
-      <!-- View 1: Dashboard -->
-      <button onclick="switchView('dashboard')" id="mobile-nav-dashboard" class="mobile-tab-btn flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-nodeEmerald bg-nodeEmerald/10 cursor-pointer relative transition-all duration-200 active:scale-95 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.3)]">
-        <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-        </svg>
-        <span class="text-[10px] font-semibold font-heading tracking-tight mt-0.5">Dashboard</span>
-      </button>
+  <nav id="mobile-liquid-glass-nav" class="md:hidden liquid-glass-nav select-none">
+    
+    <!-- View 1: Dashboard -->
+    <button onclick="switchView('dashboard')" id="mobile-nav-dashboard" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-2xl text-[#10B981] bg-[#10B981]/10 cursor-pointer relative transition-all duration-200 active:scale-95 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.3)]">
+      <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+      </svg>
+      <span class="text-[10px] font-semibold font-heading tracking-tight mt-0.5">Dashboard</span>
+    </button>
 
-      <!-- View 2: Freelancer Hub -->
-      <button onclick="switchView('freelancer')" id="mobile-nav-freelancer" class="mobile-tab-btn flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95">
-        <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-        </svg>
-        <span class="text-[10px] font-medium font-heading tracking-tight mt-0.5">Freelancer</span>
-        <span id="mobile-confirm-badge" class="absolute top-1 right-2 min-w-[16px] h-4 px-1 rounded-full bg-nodeAmber text-obsidian text-[9px] font-mono font-bold flex items-center justify-center shadow-sm hidden">0</span>
-      </button>
+    <!-- View 2: Freelancer Hub -->
+    <button onclick="switchView('freelancer')" id="mobile-nav-freelancer" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95">
+      <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+      </svg>
+      <span class="text-[10px] font-medium font-heading tracking-tight mt-0.5">Freelancer</span>
+      <span id="mobile-confirm-badge" class="absolute top-1 right-2 min-w-[16px] h-4 px-1 rounded-full bg-nodeAmber text-obsidian text-[9px] font-mono font-bold flex items-center justify-center shadow-sm hidden">0</span>
+    </button>
 
-      <!-- View 3: Fiverr Messages -->
-      <button onclick="switchView('fiverr')" id="mobile-nav-fiverr" class="mobile-tab-btn flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95">
-        <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-        </svg>
-        <span class="text-[10px] font-medium font-heading tracking-tight mt-0.5">Fiverr</span>
-        <span id="mobile-fiverr-badge" class="absolute top-1 right-2 min-w-[16px] h-4 px-1 rounded-full bg-nodeViolet text-white text-[9px] font-mono font-bold flex items-center justify-center shadow-sm hidden">0</span>
-      </button>
+    <!-- View 3: Fiverr Messages -->
+    <button onclick="switchView('fiverr')" id="mobile-nav-fiverr" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95">
+      <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+      </svg>
+      <span class="text-[10px] font-medium font-heading tracking-tight mt-0.5">Fiverr</span>
+      <span id="mobile-fiverr-badge" class="absolute top-1 right-2 min-w-[16px] h-4 px-1 rounded-full bg-nodeViolet text-white text-[9px] font-mono font-bold flex items-center justify-center shadow-sm hidden">0</span>
+    </button>
 
-      <!-- View 4: Live Terminal -->
-      <button onclick="switchView('terminal')" id="mobile-nav-terminal" class="mobile-tab-btn flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95">
-        <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-        </svg>
-        <span class="text-[10px] font-medium font-heading tracking-tight mt-0.5">Terminal</span>
-      </button>
-    </nav>
-  </div>
+    <!-- View 4: Live Terminal -->
+    <button onclick="switchView('terminal')" id="mobile-nav-terminal" class="mobile-tab-btn flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95">
+      <svg class="w-5 h-5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+      </svg>
+      <span class="text-[10px] font-medium font-heading tracking-tight mt-0.5">Terminal</span>
+    </button>
+  </nav>
 
   <!-- ============================================================ -->
   <!-- JAVASCRIPT: CONTROLLER, STATE, REAL-TIME POLLING & PROPOSALS -->
@@ -933,7 +945,7 @@
             sideBtn.className = 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-white bg-surfaceActive border border-borderMuted';
           }
           if (mobBtn) {
-            mobBtn.className = 'mobile-tab-btn flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-nodeEmerald bg-nodeEmerald/10 cursor-pointer relative transition-all duration-200 active:scale-95 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.3)]';
+            mobBtn.className = 'mobile-tab-btn flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-2xl text-[#10B981] bg-[#10B981]/10 cursor-pointer relative transition-all duration-200 active:scale-95 shadow-[inset_0_1px_0_0_rgba(16,185,129,0.3)]';
           }
         } else {
           if (sec) {
@@ -944,7 +956,7 @@
             sideBtn.className = 'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-slate-400 hover:text-white hover:bg-surfaceHover';
           }
           if (mobBtn) {
-            mobBtn.className = 'mobile-tab-btn flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95';
+            mobBtn.className = 'mobile-tab-btn flex-1 flex flex-col items-center justify-center py-1 px-2 rounded-2xl text-slate-400 hover:text-slate-200 cursor-pointer relative transition-all duration-200 active:scale-95';
           }
         }
       });
@@ -1030,7 +1042,10 @@
     function safeSetText(id, val) {
       const el = document.getElementById(id);
       if (el && val !== undefined && val !== null) {
-        el.textContent = val;
+        const str = String(val);
+        if (el.textContent !== str) {
+          el.textContent = str;
+        }
       }
     }
 

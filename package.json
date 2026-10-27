@@ -1,22 +1,15 @@
 {
-  "name": "freelance-homelab-os",
-  "version": "1.0.0",
-  "description": "Repurpose an old Android phone into a 24/7 Homelab & Hardware Freelance Command Center",
+  "name": "freelancer-command-center",
+  "version": "4.0.0",
+  "description": "Hybrid J5 Hardware Scout + Interactive Freelancer.com Bidding Command Center",
+  "private": true,
   "scripts": {
-    "dev": "vercel dev",
-    "deploy": "vercel --prod"
+    "build": "node build.js",
+    "start": "serve public"
   },
-  "keywords": [
-    "homelab",
-    "proxmox",
-    "android",
-    "termux",
-    "freelancer",
-    "kicad",
-    "esp32",
-    "pihole",
-    "pwa"
-  ],
-  "author": "Open Source Community",
-  "license": "MIT"
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3"
+  }
 }
