@@ -267,7 +267,9 @@ export default async function handler(req, res) {
       homework: {
         status: "Done",
         target_date: new Date(Date.now() + 86400000).toISOString().split('T')[0],
+        target_day_name: "Wednesday",
         tomorrow_lessons: ["English", "Eng. Lit.", "Maths", "Physics", "Economics", "Technology"],
+        planned_lessons: ["English", "Eng. Lit.", "Maths", "Physics", "Economics", "Technology"],
         tomorrow_homework: [
           {
             subject: "Physics",

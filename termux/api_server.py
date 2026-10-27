@@ -1063,11 +1063,13 @@ class J5CommandHandler(BaseHTTPRequestHandler):
                 return
             try:
                 python_bin = sys.executable or "/data/data/com.termux/files/usr/bin/python"
-                hw_script = os.path.join(BASE_DIR, "homework_bot.py")
-                subprocess.Popen([python_bin, hw_script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                hw_script = os.path.join(BASE_DIR, "j5_homework_solver.py")
+                if not os.path.exists(hw_script):
+                    hw_script = os.path.join(BASE_DIR, "homework_bot.py")
+                subprocess.Popen([python_bin, hw_script, "--force"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 self.send_json(200, {
                     "status": "success",
-                    "message": "Autonomous Homework Bot triggered in background",
+                    "message": "Autonomous 5-Agent Homework Solver triggered in background",
                     "triggered_at": datetime.now(timezone.utc).isoformat()
                 })
                 return

@@ -217,22 +217,22 @@
           <span id="sidebar-fiverr-badge" class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-nodeViolet/20 text-nodeViolet border border-nodeViolet/30 hidden">0</span>
         </button>
 
-        <!-- View 4: Live Terminal -->
-        <button onclick="switchView('terminal')" id="nav-btn-terminal" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-slate-400 hover:text-white hover:bg-surfaceHover">
-          <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
-          <span class="flex-1 text-left">Live Terminal</span>
-          <span class="text-[10px] font-mono text-slate-500">Log</span>
-        </button>
-
-        <!-- View 5: Homework Bot -->
+        <!-- View 4: Homework Bot -->
         <button onclick="switchView('homework')" id="nav-btn-homework" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-slate-400 hover:text-white hover:bg-surfaceHover">
           <svg class="w-4 h-4 text-nodeAmber" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
           </svg>
           <span class="flex-1 text-left">Homework Bot</span>
           <span id="sidebar-homework-badge" class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-nodeEmerald/20 text-nodeEmerald border border-nodeEmerald/30">DONE</span>
+        </button>
+
+        <!-- View 5: Live Terminal (At Very Bottom) -->
+        <button onclick="switchView('terminal')" id="nav-btn-terminal" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-slate-400 hover:text-white hover:bg-surfaceHover">
+          <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          <span class="flex-1 text-left">Live Terminal</span>
+          <span class="text-[10px] font-mono text-slate-500">Log</span>
         </button>
       </nav>
 
@@ -761,7 +761,7 @@
             <div class="bg-surface border border-borderSubtle rounded-2xl p-5 shadow-card space-y-4">
               <div class="flex items-center justify-between pb-2 border-b border-borderSubtle">
                 <div>
-                  <h3 class="font-heading font-bold text-white text-sm">Tomorrow's Schedule</h3>
+                  <h3 class="font-heading font-bold text-white text-sm">Tomorrow's Work Schedule</h3>
                   <span class="text-[11px] font-mono text-slate-400" id="hw-target-date-label">Target: Loading...</span>
                 </div>
                 <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-nodeCyan/20 text-nodeCyan border border-nodeCyan/30">ALBANIAN HIGH SCHOOL</span>
@@ -977,6 +977,13 @@
     function switchView(viewName) {
       triggerHaptic('light');
       AppState.currentView = viewName;
+
+      if (viewName === 'homework') {
+        if (AppState.stateData && AppState.stateData.homework) {
+          renderHomeworkView(AppState.stateData.homework);
+        }
+        fetchHomeworkState();
+      }
 
       ['dashboard', 'freelancer', 'fiverr', 'terminal', 'homework'].forEach(v => {
         const sec = document.getElementById(`view-${v}`);
@@ -1913,6 +1920,9 @@ ${job.proposal || 'Proposal details stored on server.'}
     // View 5: Autonomous Homework Bot Renderer
     function renderHomeworkView(hw) {
       if (!hw) return;
+      if (AppState.stateData) {
+        AppState.stateData.homework = hw;
+      }
 
       const statusBadge = document.getElementById('hw-status-badge');
       const statusText = document.getElementById('hw-status-text');
