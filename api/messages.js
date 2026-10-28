@@ -11,14 +11,14 @@ export default async function handler(req, res) {
   const pinHeader = req.headers['x-auth-pin'];
   const pinQuery = req.query?.pin;
   const pin = pinHeader || pinQuery;
-  const configuredPin = process.env.DASHBOARD_PIN || process.env.API_AUTH_PIN || '1337';
+  const configuredPin = String(process.env.DASHBOARD_PIN || process.env.API_AUTH_PIN || "1234").trim();
 
   if (!pin || String(pin).trim() !== configuredPin) {
     return res.status(401).json({ error: 'Unauthorized: Invalid or missing X-Auth-Pin' });
   }
 
   const overrideTunnel = req.headers['x-tunnel-url'] || req.query?.tunnel_url;
-  const j5Url = (overrideTunnel && String(overrideTunnel).trim()) || process.env.J5_TUNNEL_URL || 'https://your-tunnel.trycloudflare.com';
+  const j5Url = (overrideTunnel && String(overrideTunnel).trim()) || process.env.J5_TUNNEL_URL || 'https://subsequently-skip-breath-pizza.trycloudflare.com';
 
   if (j5Url) {
     try {

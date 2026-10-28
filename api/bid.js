@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   const pinHeader = req.headers['x-auth-pin'];
   const body = req.body || {};
   const pin = pinHeader || body.pin || body.auth_pin;
-  const configuredPin = process.env.DASHBOARD_PIN || process.env.API_AUTH_PIN || '1337';
+  const configuredPin = String(process.env.DASHBOARD_PIN || process.env.API_AUTH_PIN || "1234").trim();
 
   if (!pin || String(pin).trim() !== configuredPin) {
     return res.status(401).json({ error: 'Unauthorized: Invalid or missing X-Auth-Pin' });
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
   }
 
   const overrideTunnel = req.headers['x-tunnel-url'] || req.query?.tunnel_url;
-  const j5Url = (overrideTunnel && String(overrideTunnel).trim()) || process.env.J5_TUNNEL_URL || 'https://your-tunnel.trycloudflare.com';
+  const j5Url = (overrideTunnel && String(overrideTunnel).trim()) || process.env.J5_TUNNEL_URL || 'https://subsequently-skip-breath-pizza.trycloudflare.com';
 
   // Attempt proxy to J5 tunnel first so state, logs, and matched_jobs.json are synchronized
   if (j5Url) {
@@ -54,8 +54,8 @@ export default async function handler(req, res) {
     }
   }
 
-  const token = process.env.FREELANCER_OAUTH_TOKEN || 'YOUR_OAUTH_TOKEN_HERE';
-  const userId = process.env.FREELANCER_USER_ID || 'YOUR_USER_ID';
+  const token = process.env.FREELANCER_OAUTH_TOKEN || '6T7kH6wHALtimwa8xLF4nG55hW9Pz7';
+  const userId = process.env.FREELANCER_USER_ID || '94846528';
 
   const bidPayload = {
     project_id: Number(project_id),

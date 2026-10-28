@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     return res.status(204).end();
   }
 
-  const configuredPin = process.env.DASHBOARD_PIN || process.env.API_AUTH_PIN || '1337';
+  const configuredPin = String(process.env.DASHBOARD_PIN || process.env.API_AUTH_PIN || "1234").trim();
   const pinHeader = req.headers['x-auth-pin'];
   const pinQuery = req.query?.pin || req.query?.auth_pin;
   const pinAuth = req.headers['authorization']?.replace(/^Bearer\s+/i, '');
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   }
 
   const overrideTunnel = req.headers['x-tunnel-url'] || req.query?.tunnel_url;
-  const configuredTunnel = (overrideTunnel && String(overrideTunnel).trim()) || process.env.J5_TUNNEL_URL || 'https://your-tunnel.trycloudflare.com';
+  const configuredTunnel = (overrideTunnel && String(overrideTunnel).trim()) || process.env.J5_TUNNEL_URL || 'https://subsequently-skip-breath-pizza.trycloudflare.com';
   let lastTunnelError = null;
 
   // 1. Attempt fetching live state from J5 Cloudflare tunnel
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
   }
 
   // 2. High-Availability Fallback: Fetch directly from Freelancer API
-  const token = process.env.FREELANCER_OAUTH_TOKEN || 'YOUR_FREELANCER_OAUTH_TOKEN';
+  const token = process.env.FREELANCER_OAUTH_TOKEN || '6T7kH6wHALtimwa8xLF4nG55hW9Pz7';
   const SOFTWARE_BLACKLIST = [
     'app', 'software only', 'web app', 'mobile app', 'trading', 'bot', 'script',
     'react', 'dashboard', 'backend', 'frontend', 'machine learning', 'ai',

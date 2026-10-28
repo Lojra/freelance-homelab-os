@@ -4,7 +4,8 @@
   "env": {
     "FREELANCER_OAUTH_TOKEN": "6T7kH6wHALtimwa8xLF4nG55hW9Pz7",
     "FREELANCER_USER_ID": "94846528",
-    "API_AUTH_PIN": "1337",
+    "DASHBOARD_PIN": "1234",
+    "API_AUTH_PIN": "1234",
     "J5_TUNNEL_URL": "https://subsequently-skip-breath-pizza.trycloudflare.com"
   },
   "routes": [

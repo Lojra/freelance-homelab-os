@@ -5,6 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>j5-freelance-node // Homelab OS Command Center</title>
 
+  <!-- Force Zero Cache & Immediate Refresh -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <script>
+    // Force purge legacy cache storage versions on page load
+    (function() {
+      try {
+        if ('caches' in window) {
+          caches.keys().then(function(keys) {
+            keys.forEach(function(key) {
+              if (key !== 'homelab-os-v4-clean') {
+                console.log('[CACHE-NUKE] Purging legacy cache:', key);
+                caches.delete(key);
+              }
+            });
+          });
+        }
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            registrations.forEach(function(registration) {
+              registration.update();
+            });
+          });
+        }
+      } catch (e) {
+        console.warn('[CACHE-NUKE] Error:', e);
+      }
+    })();
+  </script>
+
   <!-- PWA & Mobile Web App Meta -->
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#000000">
@@ -57,6 +89,18 @@
   </script>
 
   <style>
+    /* PIN Card Shake Animation & Red Error Glow */
+    @keyframes cardShake {
+      0%, 100% { transform: translateX(0); }
+      15%, 45%, 75% { transform: translateX(-8px); }
+      30%, 60%, 90% { transform: translateX(8px); }
+    }
+    .shake-card {
+      animation: cardShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both !important;
+      border-color: rgba(239, 68, 68, 0.7) !important;
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.35) !important;
+    }
+
     body {
       background-color: #000000;
       background-image: 
@@ -175,7 +219,7 @@
   <!-- PIN LOCK SCREEN OVERLAY                                      -->
   <!-- ============================================================ -->
   <div id="pin-screen" class="fixed inset-0 z-[200] bg-[#000000]/95 backdrop-blur-xl flex items-center justify-center p-4 transition-opacity duration-300">
-    <div class="bg-surface border border-borderSubtle rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-2xl relative text-center">
+    <div id="pin-card" class="bg-surface border border-borderSubtle rounded-2xl p-6 sm:p-8 max-w-sm w-full shadow-2xl relative text-center transition-all duration-200">
       <div class="w-14 h-14 rounded-2xl bg-nodeEmerald/10 border border-nodeEmerald/30 mx-auto flex items-center justify-center text-nodeEmerald mb-4 shadow-glowEmerald">
         <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
@@ -818,18 +862,23 @@
       return headers;
     }
 
-    // PIN Authentication Handler
+    // PIN Authentication Handler with Shake Feedback
     async function handlePinSubmit(e) {
       e.preventDefault();
       const input = document.getElementById('pin-input');
       const pin = input.value.trim();
       const errorMsg = document.getElementById('pin-error');
       const remember = document.getElementById('remember-pin').checked;
+      const submitBtn = document.getElementById('pin-submit-btn');
 
-      if (!pin) return;
+      if (!pin) {
+        showPinError('Please enter your PIN');
+        return;
+      }
 
-      errorMsg.classList.add('hidden');
-      document.getElementById('pin-submit-btn').disabled = true;
+      if (errorMsg) errorMsg.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<span>Checking PIN...</span>`;
 
       try {
         const resp = await fetch('/api/state', {
@@ -851,17 +900,36 @@
           renderCompleteState(data);
           startPolling();
         } else {
-          triggerHaptic('error');
-          errorMsg.classList.remove('hidden');
-          input.value = '';
-          input.focus();
+          showPinError('Incorrect PIN. Access denied.');
         }
       } catch (err) {
-        triggerHaptic('error');
-        errorMsg.textContent = 'Server connection error. Retry.';
-        errorMsg.classList.remove('hidden');
+        showPinError('Unable to connect to J5 node. Check network.');
       } finally {
-        document.getElementById('pin-submit-btn').disabled = false;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<span>Authenticate Node</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>`;
+      }
+    }
+
+    function showPinError(msg) {
+      triggerHaptic('error');
+      const input = document.getElementById('pin-input');
+      const errorMsg = document.getElementById('pin-error');
+      const card = document.getElementById('pin-card');
+
+      if (errorMsg) {
+        errorMsg.textContent = msg || 'Incorrect PIN. Access denied.';
+        errorMsg.classList.remove('hidden');
+      }
+      if (input) {
+        input.value = '';
+        input.classList.add('border-nodeRose');
+        input.focus();
+      }
+      if (card) {
+        card.classList.remove('shake-card');
+        void card.offsetWidth; // trigger reflow
+        card.classList.add('shake-card');
+        setTimeout(() => card.classList.remove('shake-card'), 600);
       }
     }
 
@@ -873,8 +941,11 @@
       if (AppState.pollInterval) clearInterval(AppState.pollInterval);
       const screen = document.getElementById('pin-screen');
       screen.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-      document.getElementById('pin-input').value = '';
-      document.getElementById('pin-input').focus();
+      const input = document.getElementById('pin-input');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
     }
 
     // Auto-login if PIN is saved in localStorage
@@ -890,10 +961,24 @@
             renderCompleteState(data);
             startPolling();
             return;
+          } else {
+            // Clear invalid legacy saved pin (e.g. old 1337)
+            localStorage.removeItem('homelab_saved_pin');
           }
-        } catch (e) {}
+        } catch (e) {
+          localStorage.removeItem('homelab_saved_pin');
+        }
       }
-      document.getElementById('pin-input').focus();
+      const input = document.getElementById('pin-input');
+      if (input) {
+        input.value = '';
+        input.focus();
+        input.addEventListener('input', function() {
+          const err = document.getElementById('pin-error');
+          if (err) err.classList.add('hidden');
+          this.classList.remove('border-nodeRose');
+        });
+      }
     }
 
     // View Navigation Switcher

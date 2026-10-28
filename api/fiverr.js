@@ -2,13 +2,13 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Auth-Pin, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Auth-Pin, X-Tunnel-Url, Authorization');
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
 
-  const configuredPin = process.env.DASHBOARD_PIN || process.env.API_AUTH_PIN || '1337';
+  const configuredPin = String(process.env.DASHBOARD_PIN || process.env.API_AUTH_PIN || "1234").trim();
   const pinHeader = req.headers['x-auth-pin'];
   const pinQuery = req.query?.pin || req.query?.auth_pin;
   const pinAuth = req.headers['authorization']?.replace(/^Bearer\s+/i, '');
@@ -19,7 +19,9 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized: Invalid or missing X-Auth-Pin' });
   }
 
-  const j5Url = process.env.J5_TUNNEL_URL;
+  // Attempt proxy to J5 tunnel
+  const overrideTunnel = req.headers['x-tunnel-url'] || req.query?.tunnel_url;
+  const j5Url = (overrideTunnel && String(overrideTunnel).trim()) || process.env.J5_TUNNEL_URL || 'https://subsequently-skip-breath-pizza.trycloudflare.com';
   if (j5Url) {
     try {
       let targetPath = '/api/fiverr';
@@ -50,12 +52,12 @@ export default async function handler(req, res) {
     status: 'success',
     inbox: [
       {
-        id: "101",
-        sender: "sample_client",
-        subject: "New inquiry for PCB enclosure and layout",
-        snippet: "Hello! We have an IoT sensor prototype on breadboard and need a clean 2-layer PCB layout with 3D enclosure.",
+        id: "7551",
+        sender: "anna_puc5912",
+        subject: "You’ve got new messages from anna_puc5912",
+        snippet: "Hi! Can you create a custom 3D enclosure and schematic for a sensor project? Need to know your estimated delivery time and pricing.",
         timestamp: new Date().toISOString(),
-        fiverr_link: "https://www.fiverr.com/inbox",
+        fiverr_link: "https://www.fiverr.com/inbox/anna_puc5912",
         status: "unread",
         inquiry_type: "New Message",
       }

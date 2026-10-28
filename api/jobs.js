@@ -2,6 +2,7 @@
 import stateHandler from './state.js';
 
 export default async function handler(req, res) {
+  // Leverage stateHandler to get standardized job queue
   const mockRes = {
     statusCode: 200,
     headers: {},

@@ -43,7 +43,7 @@ ENV_FILE = os.path.join(BASE_DIR, ".env")
 TUNNEL_FILE = os.path.join(WWW_DIR, "tunnel_url.txt")
 RUN_SCRIPT = os.path.join(BASE_DIR, "run_job_bot.sh")
 
-DEFAULT_PIN = "1337"
+DEFAULT_PIN = "1234"
 HARDWARE_SKILL_IDS = [43, 76, 111, 265, 394, 440, 612, 630, 1347, 1657]
 
 FALLBACK_USD_RATES = {
@@ -148,7 +148,8 @@ def get_user_id():
 
 
 def get_configured_pin():
-    return os.environ.get("DASHBOARD_PIN", os.environ.get("API_AUTH_PIN", DEFAULT_PIN))
+    val = os.environ.get("DASHBOARD_PIN") or os.environ.get("API_AUTH_PIN") or DEFAULT_PIN
+    return str(val).strip()
 
 
 def get_last_log_lines(n=50):
@@ -533,27 +534,37 @@ class J5CommandHandler(BaseHTTPRequestHandler):
         return {}
 
     def is_authenticated(self, body_data=None):
-        pin_header = self.headers.get("X-Auth-Pin")
-        if not pin_header:
-            auth_header = self.headers.get("Authorization", "")
-            if auth_header.lower().startswith("bearer "):
-                pin_header = auth_header[7:].strip()
+        candidates = []
 
-        pin_query = None
+        # 1. Check headers case-insensitively
+        for k, v in self.headers.items():
+            if k.lower() == "x-auth-pin" and v:
+                candidates.append(v)
+            elif k.lower() == "authorization" and v:
+                if str(v).lower().startswith("bearer "):
+                    candidates.append(str(v)[7:].strip())
+                else:
+                    candidates.append(v)
+
+        # 2. Check query params
         if "?" in self.path:
             try:
                 params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
-                pin_query = params.get("pin", [None])[0] or params.get("auth_pin", [None])[0]
+                for qk in ["pin", "auth_pin"]:
+                    if qk in params and params[qk]:
+                        candidates.extend(params[qk])
             except Exception:
                 pass
 
-        pin_body = None
+        # 3. Check JSON body
         if body_data and isinstance(body_data, dict):
-            pin_body = body_data.get("pin") or body_data.get("auth_pin")
+            for bk in ["pin", "auth_pin"]:
+                if bk in body_data and body_data[bk] is not None:
+                    candidates.append(body_data[bk])
 
         configured_pin = get_configured_pin()
-        for candidate in [pin_header, pin_query, pin_body]:
-            if candidate and str(candidate).strip() == configured_pin:
+        for cand in candidates:
+            if cand is not None and str(cand).strip() == configured_pin:
                 return True
         return False
 

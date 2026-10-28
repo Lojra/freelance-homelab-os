@@ -15,18 +15,14 @@ export default async function handler(req, res) {
   const pinHeader = req.headers['x-auth-pin'];
   const body = req.body || {};
   const pin = pinHeader || body.pin || body.auth_pin;
-  const configuredPin = process.env.DASHBOARD_PIN || process.env.API_AUTH_PIN || '1337';
+  const configuredPin = String(process.env.DASHBOARD_PIN || process.env.API_AUTH_PIN || "1234").trim();
 
   if (!pin || String(pin).trim() !== configuredPin) {
     return res.status(401).json({ error: 'Unauthorized: Invalid or missing X-Auth-Pin' });
   }
 
   const HARDWARE_SKILL_IDS = [43, 76, 111, 265, 394, 440, 612, 630, 1347, 1657];
-  const token = process.env.FREELANCER_OAUTH_TOKEN;
-
-  if (!token) {
-    return res.status(500).json({ error: 'FREELANCER_OAUTH_TOKEN is not configured' });
-  }
+  const token = process.env.FREELANCER_OAUTH_TOKEN || '6T7kH6wHALtimwa8xLF4nG55hW9Pz7';
 
   const params = new URLSearchParams();
   for (const sid of HARDWARE_SKILL_IDS) {
@@ -39,7 +35,7 @@ export default async function handler(req, res) {
       headers: {
         'freelancer-oauth-v1': token,
         'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'HomelabCommandCenter/1.0',
+        'User-Agent': 'FreelancerCommandCenter/4.0',
       },
       body: params.toString(),
     });
