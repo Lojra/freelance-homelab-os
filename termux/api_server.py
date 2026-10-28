@@ -143,8 +143,8 @@ def get_token():
 
 
 def get_user_id():
-    uid = os.environ.get("FREELANCER_USER_ID", "YOUR_FREELANCER_USER_ID")
-    return int(uid) if uid.isdigit() else YOUR_FREELANCER_USER_ID
+    uid = os.environ.get("FREELANCER_USER_ID", "94846528")
+    return int(uid) if uid.isdigit() else 94846528
 
 
 def get_configured_pin():
@@ -973,6 +973,37 @@ class J5CommandHandler(BaseHTTPRequestHandler):
                 "status": "success",
                 "message": f"Project #{project_id} dismissed",
                 "updated": updated
+            })
+            return
+
+        # Route: Clear All Pending Confirmation Jobs
+        if path in ["/api/jobs/clear-pending", "/api/jobs/clear", "/api/clear-pending"]:
+            if not self.is_authenticated(body):
+                self.send_json(401, {"error": "Unauthorized: Invalid or missing X-Auth-Pin"})
+                return
+
+            jobs = load_json_file(MATCHED_JOBS_FILE, [])
+            cleared_count = 0
+            now_iso = datetime.now(timezone.utc).isoformat()
+            for j in jobs:
+                if j.get("bid_status") in ["needs_confirmation", "pending"]:
+                    j["bid_status"] = "dismissed"
+                    j["dismissed_timestamp"] = now_iso
+                    cleared_count += 1
+
+            if cleared_count > 0:
+                save_json_file(MATCHED_JOBS_FILE, jobs)
+
+            stats = load_json_file(STATS_FILE, {})
+            stats["dismissed_jobs"] = stats.get("dismissed_jobs", 0) + cleared_count
+            stats["needs_confirmation_count"] = 0
+            stats["pending_matches"] = 0
+            save_json_file(STATS_FILE, stats)
+
+            self.send_json(200, {
+                "status": "success",
+                "message": f"Successfully dismissed {cleared_count} pending jobs",
+                "cleared_count": cleared_count
             })
             return
 

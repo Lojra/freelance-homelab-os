@@ -70,27 +70,29 @@
       overflow-x: hidden;
     }
 
-    /* Floating Liquid Glass Navigation Bar */
+    /* Floating Liquid Glass Navigation Bar (Global) */
     .liquid-glass-nav {
       position: fixed;
       bottom: 16px;
-      left: 16px;
+      left: 0;
+      right: 0;
+      margin-left: auto;
+      margin-right: auto;
       width: calc(100% - 32px);
-      max-width: 480px;
-      margin: 0 auto;
-      right: 16px;
+      max-width: 520px;
       height: 64px;
       border-radius: 24px;
       z-index: 100;
-      background: rgba(15, 15, 15, 0.45);
-      backdrop-filter: blur(16px) saturate(180%);
-      -webkit-backdrop-filter: blur(16px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      background: rgba(15, 15, 15, 0.72);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
       display: flex;
       align-items: center;
       justify-content: space-around;
-      padding: 0 8px;
+      padding: 0 12px;
+      pointer-events: auto;
     }
 
     /* Touch-Action & Tactile Response Optimization */
@@ -211,113 +213,30 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- MAIN APPLICATION LAYOUT (DESKTOP SIDEBAR + HEADER + VIEWS)   -->
+  <!-- MAIN APPLICATION LAYOUT (GLOBAL FLOATING NAV + DATA DENSITY)  -->
   <!-- ============================================================ -->
-  <div class="flex-1 flex flex-col md:flex-row overflow-hidden pb-0 md:pb-0">
-
-    <!-- DESKTOP LEFT SIDEBAR -->
-    <aside class="hidden md:flex flex-col w-64 bg-surface border-r border-borderSubtle flex-shrink-0 select-none">
-      <!-- Sidebar Header / Node Status -->
-      <div class="p-4 border-b border-borderSubtle flex items-center gap-3">
-        <div class="w-9 h-9 rounded-xl bg-nodeEmerald/15 border border-nodeEmerald/30 flex items-center justify-center text-nodeEmerald flex-shrink-0">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
-          </svg>
-        </div>
-        <div class="min-w-0">
-          <div class="font-heading font-bold text-sm tracking-tight text-white flex items-center gap-1.5">
-            <span>HOMELAB OS</span>
-            <span class="w-2 h-2 rounded-full bg-nodeEmerald pulse-dot"></span>
-          </div>
-          <div class="text-[11px] font-mono text-slate-400 truncate">j5-node // 192.168.1.14</div>
-        </div>
-      </div>
-
-      <!-- Navigation Links -->
-      <nav class="flex-1 p-3 space-y-1.5 overflow-y-auto">
-        <div class="text-[10px] font-mono text-slate-500 px-3 py-1 font-semibold tracking-wider">CLUSTER VIEWS</div>
-
-        <!-- View 1: Dashboard -->
-        <button onclick="switchView('dashboard')" id="nav-btn-dashboard" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-white bg-surfaceActive border border-borderMuted">
-          <svg class="w-4 h-4 text-nodeCyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-          </svg>
-          <span class="flex-1 text-left">Dashboard</span>
-          <span class="text-[10px] font-mono text-slate-400">Node</span>
-        </button>
-
-        <!-- View 2: Freelancer Hub -->
-        <button onclick="switchView('freelancer')" id="nav-btn-freelancer" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-slate-400 hover:text-white hover:bg-surfaceHover">
-          <svg class="w-4 h-4 text-nodeEmerald" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-          </svg>
-          <span class="flex-1 text-left">Freelancer Hub</span>
-          <span id="sidebar-confirm-badge" class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-nodeAmber/20 text-nodeAmber border border-nodeAmber/30 hidden">0</span>
-        </button>
-
-        <!-- View 3: Fiverr Messages -->
-        <button onclick="switchView('fiverr')" id="nav-btn-fiverr" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-slate-400 hover:text-white hover:bg-surfaceHover">
-          <svg class="w-4 h-4 text-nodeViolet" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
-          </svg>
-          <span class="flex-1 text-left">Fiverr Messages</span>
-          <span id="sidebar-fiverr-badge" class="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-nodeViolet/20 text-nodeViolet border border-nodeViolet/30 hidden">0</span>
-        </button>
-
-        <!-- View 5: Live Terminal (At Very Bottom) -->
-        <button onclick="switchView('terminal')" id="nav-btn-terminal" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer text-slate-400 hover:text-white hover:bg-surfaceHover">
-          <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-          </svg>
-          <span class="flex-1 text-left">Live Terminal</span>
-          <span class="text-[10px] font-mono text-slate-500">Log</span>
-        </button>
-      </nav>
-
-      <!-- Sidebar Footer: Quick Scout Trigger & Lock -->
-      <div class="p-3 border-t border-borderSubtle space-y-2">
-        <button onclick="triggerScoutScan()" id="sidebar-scout-btn" class="w-full py-2 px-3 rounded-xl bg-nodeEmerald/10 hover:bg-nodeEmerald/20 border border-nodeEmerald/30 text-nodeEmerald text-xs font-heading font-semibold flex items-center justify-center gap-2 transition cursor-pointer active:scale-95">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-          </svg>
-          <span>Run Scout Cycle ⚡</span>
-        </button>
-
-        <div class="flex items-center justify-between px-2 pt-1 text-[11px] font-mono text-slate-500">
-          <span id="cluster-uptime-side">Up --:--</span>
-          <button onclick="lockSession()" class="text-slate-400 hover:text-nodeRose transition cursor-pointer" title="Lock session">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </aside>
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden w-full">
 
     <!-- MAIN CONTENT AREA -->
-    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto pb-28">
 
       <!-- TOP APP BAR -->
       <header class="h-14 border-b border-borderSubtle bg-surface/70 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between flex-shrink-0 z-20">
-        <!-- Left: Mobile Brand / View Title -->
+        <!-- Left: Homelab OS Brand & Status -->
         <div class="flex items-center gap-3">
-          <div class="md:hidden flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-nodeEmerald/20 text-nodeEmerald flex items-center justify-center">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-nodeEmerald/20 border border-nodeEmerald/30 text-nodeEmerald flex items-center justify-center flex-shrink-0">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
             </div>
-            <span class="font-heading font-bold text-sm tracking-tight text-white">HOMELAB</span>
-          </div>
-
-          <div class="hidden md:flex items-center gap-2 text-xs font-mono">
-            <span class="text-slate-400">NODE:</span>
-            <span class="text-white font-semibold">SM-J530F</span>
-            <span class="text-slate-600">//</span>
-            <span class="text-nodeEmerald font-semibold flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-nodeEmerald"></span>
-              2-TIER AUTO-BIDDER ACTIVE
-            </span>
+            <div class="flex flex-col">
+              <div class="flex items-center gap-2">
+                <span class="font-heading font-bold text-sm tracking-tight text-white">HOMELAB OS</span>
+                <span class="w-2 h-2 rounded-full bg-nodeEmerald pulse-dot"></span>
+              </div>
+              <span class="text-[10px] font-mono text-slate-400 hidden sm:inline">SM-J530F // 192.168.1.14</span>
+            </div>
           </div>
         </div>
 
@@ -336,6 +255,12 @@
             <span class="truncate text-slate-400" id="header-tunnel-label">Tunnel Live</span>
           </div>
 
+          <!-- Quick Scout Trigger -->
+          <button onclick="triggerScoutScan()" id="header-scout-btn" class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-nodeEmerald/10 hover:bg-nodeEmerald/20 border border-nodeEmerald/30 text-nodeEmerald text-xs font-mono font-semibold transition cursor-pointer active:scale-95" title="Run instant scout cycle">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <span>Scout</span>
+          </button>
+
           <!-- Refresh State Button -->
           <button onclick="fetchState(true)" id="header-refresh-btn" class="p-1.5 rounded-lg bg-obsidian hover:bg-surfaceActive border border-borderSubtle text-slate-300 hover:text-white transition cursor-pointer" title="Refresh state">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,8 +268,16 @@
             </svg>
           </button>
 
-          <!-- Mobile Lock Session -->
-          <button onclick="lockSession()" class="md:hidden p-1.5 rounded-lg bg-obsidian text-slate-400 hover:text-nodeRose border border-borderSubtle cursor-pointer">
+          <!-- Download Android APK Button -->
+          <a href="/app.apk" download="HomelabOS-CommandCenter.apk" class="p-1.5 rounded-lg bg-obsidian hover:bg-surfaceActive border border-borderSubtle text-slate-300 hover:text-nodeEmerald transition cursor-pointer flex items-center gap-1.5 text-xs font-mono" title="Download Native Android APK">
+            <svg class="w-4 h-4 text-nodeEmerald" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            <span class="hidden sm:inline font-bold">APK</span>
+          </a>
+
+          <!-- Lock Session Button -->
+          <button onclick="lockSession()" class="p-1.5 rounded-lg bg-obsidian text-slate-400 hover:text-nodeRose border border-borderSubtle transition cursor-pointer" title="Lock session">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
             </svg>
@@ -626,18 +559,30 @@
           </div>
 
           <!-- SUB-TAB B: NEEDS CONFIRMATION (TIER-2 REVIEW DECK) -->
-          <div id="fl-subtab-confirmation" class="space-y-4 hidden">
-            <div class="bg-nodeAmber/10 border border-nodeAmber/30 rounded-2xl p-4 flex items-start gap-3">
-              <svg class="w-5 h-5 text-nodeAmber flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div id="fl-subtab-confirmation" class="space-y-3 hidden">
+            <!-- Header with High-Contrast Decline All Button -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-borderSubtle">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono font-bold text-slate-300 uppercase tracking-wider">Pending Confirmation Leads</span>
+                <span id="confirmation-header-badge" class="px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-nodeAmber/20 text-nodeAmber border border-nodeAmber/30">0</span>
+              </div>
+              <button onclick="declineAllPendingJobs()" id="btn-decline-all-pending" class="px-3 py-1.5 rounded-lg bg-nodeRose/15 hover:bg-nodeRose/25 border border-nodeRose/40 text-nodeRose hover:text-white text-xs font-mono font-bold transition cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 shadow-sm" title="Dismiss all pending confirmation leads">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                <span id="decline-all-btn-label">Decline All (Clear 0)</span>
+              </button>
+            </div>
+
+            <div class="bg-nodeAmber/10 border border-nodeAmber/30 rounded-lg p-3 flex items-start gap-2.5">
+              <svg class="w-4 h-4 text-nodeAmber flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
               </svg>
-              <div class="text-xs">
-                <strong class="text-nodeAmber font-heading">Tier 2 Human Review Routing:</strong>
-                <p class="text-slate-300 mt-0.5">High-budget leads (&gt; $65 USD), hourly jobs, or contracts requiring skill confirmation are paused here. Edit the $ Bid Amount, adjust proposal templates, and approve with 1-click.</p>
+              <div class="text-[11px] leading-snug">
+                <strong class="text-nodeAmber font-heading">Tier 2 Human Review:</strong>
+                <span class="text-slate-300 ml-1">High-budget leads (&gt; $250 USD), hourly jobs, or contracts requiring skill verification are paused here. Edit the $ Bid Amount and approve, or dismiss in 1-click.</span>
               </div>
             </div>
 
-            <div id="confirmation-jobs-container" class="smooth-scroll-container" class="space-y-4">
+            <div id="confirmation-jobs-container" class="smooth-scroll-container space-y-3">
               <!-- Dynamically rendered review cards -->
             </div>
           </div>
@@ -779,11 +724,10 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- FLOATING LIQUID GLASS MOBILE BOTTOM NAV                      -->
+  <!-- GLOBAL FLOATING LIQUID GLASS BOTTOM NAVIGATION                -->
   <!-- ============================================================ -->
-  <nav id="mobile-liquid-glass-nav"
-       class="md:hidden liquid-glass-nav select-none"
-       style="position: fixed; bottom: 16px; left: 16px; width: calc(100% - 32px); max-width: 480px; margin: 0 auto; right: 16px; height: 64px; border-radius: 24px; z-index: 100; background: rgba(15, 15, 15, 0.45); backdrop-filter: blur(16px) saturate(180%); -webkit-backdrop-filter: blur(16px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: space-around; padding: 0 8px;">
+  <nav id="global-liquid-glass-nav"
+       class="liquid-glass-nav select-none">
     
     <!-- View 1: Dashboard -->
     <button onclick="switchView('dashboard')" id="mobile-nav-dashboard"
@@ -832,6 +776,12 @@
   <!-- JAVASCRIPT: CONTROLLER, STATE, REAL-TIME POLLING & PROPOSALS -->
   <!-- ============================================================ -->
   <script>
+    // PWA Mobile Crash Protection: Prevent uncaught rejection crashes
+    window.addEventListener('unhandledrejection', function(event) {
+      console.warn('[PWA] Handled unhandled rejection:', event.reason);
+      event.preventDefault();
+    });
+
     // Global Application State
     const AppState = {
       authenticatedPin: null,
@@ -1343,26 +1293,19 @@
       // Render Sub-Tab B: Needs Confirmation
       renderConfirmationTab(confirmation);
 
-      // Render Sub-Tab: Contests
-      renderContestsTab(contests);
-
-      // Render Sub-Tab C: Messages
-      renderFreelancerMessages(messages);
-    }
-
-    // Render Sub-Tab: Contests
+      // Render Sub-Tab: Contests (Kiwix Data-Dense)
     function renderContestsTab(contests) {
       const container = document.getElementById('contests-container');
       if (!container) return;
 
       if (!contests || contests.length === 0) {
         container.innerHTML = `
-          <div class="bg-surface border border-borderSubtle rounded-2xl p-10 text-center">
-            <div class="w-12 h-12 rounded-xl bg-nodeAmber/10 text-nodeAmber mx-auto flex items-center justify-center mb-3">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+          <div class="bg-surface border border-borderSubtle rounded-lg p-6 text-center">
+            <div class="w-10 h-10 rounded-lg bg-nodeAmber/10 text-nodeAmber mx-auto flex items-center justify-center mb-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
             </div>
-            <h3 class="font-heading font-bold text-white text-base">No active hardware contests found</h3>
-            <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">The J5 bot actively scouts Freelancer contests matching KiCad, PCB, and 3D printing requirements with guaranteed prize pools.</p>
+            <h3 class="font-heading font-bold text-white text-sm">No active hardware contests found</h3>
+            <p class="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">The J5 bot scouts Freelancer contests matching KiCad, PCB, and 3D printing requirements with guaranteed prize pools.</p>
           </div>
         `;
         return;
@@ -1375,52 +1318,52 @@
         const entryCount = c.entry_count !== undefined ? `${c.entry_count} entries` : '';
 
         return `
-          <div id="contest-card-${c.contest_id}" class="bg-surface border border-borderSubtle hover:border-nodeAmber/40 rounded-2xl p-4 sm:p-5 shadow-card transition space-y-3">
-            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-              <div class="min-w-0 space-y-1">
-                <div class="flex flex-wrap items-center gap-2 mb-1">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-nodeAmber/20 text-nodeAmber border border-nodeAmber/30 flex items-center gap-1">
-                    <span>🏆 CONTEST</span>
+          <div id="contest-card-${c.contest_id}" class="bg-surface border border-borderSubtle hover:border-nodeAmber/40 rounded-lg p-3 sm:p-3.5 shadow-sm transition space-y-2.5">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+              <div class="min-w-0 flex-1 space-y-1">
+                <div class="flex flex-wrap items-center gap-2 mb-0.5">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-nodeAmber/20 text-nodeAmber border border-nodeAmber/30">
+                    [CONTEST]
                   </span>
                   <span class="px-2 py-0.5 rounded text-[10px] font-mono text-slate-300 bg-obsidian border border-borderSubtle">
-                    ⏳ ${timeRemaining}
+                    [TIME: ${timeRemaining}]
                   </span>
                   ${entryCount ? `<span class="px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-obsidian border border-borderSubtle">${entryCount}</span>` : ''}
                   <span class="text-[11px] font-mono text-slate-500">#${c.contest_id}</span>
                 </div>
-                <h3 class="font-heading font-bold text-white text-base hover:text-nodeEmerald transition">
-                  <a href="${c.url}" target="_blank" class="hover:underline flex items-center gap-1.5">
+                <h3 class="font-heading font-semibold text-white text-sm hover:text-nodeEmerald transition">
+                  <a href="${c.url}" target="_blank" rel="noopener noreferrer" class="hover:underline flex items-center gap-1.5">
                     <span>${c.title}</span>
-                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                   </a>
                 </h3>
               </div>
 
               <!-- Prize Badge -->
-              <div class="bg-obsidian border border-borderSubtle rounded-xl p-3 text-right flex-shrink-0">
-                <div class="text-[10px] font-mono text-slate-500 uppercase">PRIZE POOL</div>
-                <div class="text-base font-bold font-mono text-nodeAmber">${prizeUsd}</div>
-                ${nativeDisplay ? `<div class="text-[11px] font-mono text-slate-400">${nativeDisplay}</div>` : ''}
+              <div class="bg-obsidian border border-borderSubtle rounded px-2.5 py-1.5 text-right flex-shrink-0">
+                <div class="text-[9px] font-mono text-slate-500 uppercase">PRIZE POOL</div>
+                <div class="text-xs font-bold font-mono text-nodeAmber">${prizeUsd}</div>
+                ${nativeDisplay ? `<div class="text-[10px] font-mono text-slate-400">${nativeDisplay}</div>` : ''}
               </div>
             </div>
 
             <!-- Brief / Description -->
-            <div class="text-xs text-slate-300 leading-relaxed bg-obsidian/40 p-3 rounded-xl border border-borderSubtle select-text max-h-36 overflow-y-auto">
+            <div class="text-[11px] text-slate-300 leading-relaxed bg-obsidian/40 p-2.5 rounded border border-borderSubtle select-text line-clamp-3 hover:line-clamp-none transition-all cursor-pointer" title="Click to view full description">
               ${c.description || 'No description provided.'}
             </div>
 
             <!-- Matched Tags & Actions -->
-            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-borderSubtle">
-              <div class="flex flex-wrap gap-1.5">
-                ${(c.matched_keywords || []).map(k => `<span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-obsidian text-nodeCyan border border-nodeCyan/30">#${k}</span>`).join('')}
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-borderSubtle">
+              <div class="flex flex-wrap gap-1">
+                ${(c.matched_keywords || []).map(k => `<span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-obsidian text-nodeCyan border border-nodeCyan/30">#${k}</span>`).join('')}
               </div>
 
               <div class="flex items-center gap-2">
-                <button onclick="dismissContest(${c.contest_id})" class="px-3.5 py-1.5 rounded-xl bg-obsidian hover:bg-nodeRose/10 text-slate-400 hover:text-nodeRose border border-borderSubtle hover:border-nodeRose/30 text-xs font-mono transition cursor-pointer">
+                <button onclick="dismissContest(${c.contest_id})" class="px-2.5 py-1 rounded bg-surfaceHover hover:bg-nodeRose/20 text-slate-400 hover:text-nodeRose border border-borderSubtle text-[11px] font-mono transition cursor-pointer">
                   Dismiss
                 </button>
-                <a href="${c.url}" target="_blank" class="px-4 py-1.5 rounded-xl bg-nodeEmerald hover:bg-emerald-400 text-obsidian font-heading font-bold text-xs tracking-wide shadow-glowEmerald transition cursor-pointer active:scale-95 flex items-center gap-1.5">
-                  <span>Enter on Freelancer ↗</span>
+                <a href="${c.url}" target="_blank" rel="noopener noreferrer" class="px-3.5 py-1 rounded bg-nodeAmber hover:bg-amber-400 text-obsidian font-heading font-bold text-[11px] flex items-center gap-1 transition cursor-pointer shadow-sm">
+                  <span>Enter Contest &rarr;</span>
                 </a>
               </div>
             </div>
@@ -1462,17 +1405,17 @@
       }
     }
 
-    // Render Sub-Tab A: Applied Jobs
+    // Render Sub-Tab A: Applied Jobs (Kiwix Data-Dense)
     function renderAppliedTab(jobs) {
       const container = document.getElementById('applied-jobs-container');
       if (!jobs || jobs.length === 0) {
         container.innerHTML = `
-          <div class="bg-surface border border-borderSubtle rounded-2xl p-8 text-center">
-            <div class="w-12 h-12 rounded-xl bg-nodeEmerald/10 text-nodeEmerald mx-auto flex items-center justify-center mb-3">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <div class="bg-surface border border-borderSubtle rounded-lg p-6 text-center">
+            <div class="w-10 h-10 rounded-lg bg-nodeEmerald/10 text-nodeEmerald mx-auto flex items-center justify-center mb-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
-            <h3 class="font-heading font-bold text-white text-base">No bids placed yet today</h3>
-            <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">When the 2-Tier bot finds matching jobs between $15 and $65 USD, it submits bids automatically and logs them here.</p>
+            <h3 class="font-heading font-bold text-white text-sm">No bids placed yet today</h3>
+            <p class="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">When the auto-bidder finds matching fixed-price jobs up to $250 USD, it submits bids algorithmically and logs them here.</p>
           </div>
         `;
         return;
@@ -1485,76 +1428,84 @@
         const budgetDisplay = job.budget_display || `${job.currency_sign || '$'}${job.min_budget} - ${job.currency_sign || '$'}${job.max_budget} ${job.currency || 'USD'}`;
         const timestamp = job.applied_at || job.bid_timestamp || job.timestamp || '';
         const timeAgo = timestamp ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recently';
+        const proposalPreview = (job.proposal || '').trim() || 'No proposal text recorded.';
 
         return `
-          <div class="bg-surface border border-borderSubtle hover:border-borderMuted rounded-2xl p-4 sm:p-5 shadow-card transition space-y-3">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div class="min-w-0">
+          <div class="bg-surface border border-borderSubtle hover:border-borderMuted rounded-lg p-3 sm:p-3.5 shadow-sm transition space-y-2">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
                 <div class="flex items-center gap-2 mb-1">
                   <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${isAuto ? 'bg-nodeEmerald/20 text-nodeEmerald border border-nodeEmerald/30' : 'bg-nodeCyan/20 text-nodeCyan border border-nodeCyan/30'}">
-                    ${isAuto ? 'AUTO-APPLIED ✅' : 'MANUAL BID 🚀'}
+                    ${isAuto ? '[AUTO-APPLIED]' : '[MANUAL BID]'}
                   </span>
                   <span class="text-[11px] font-mono text-slate-400">#${job.project_id} // ${timeAgo}</span>
+                  ${job.bid_period ? `<span class="text-[10px] font-mono text-slate-500">${job.bid_period}d delivery</span>` : ''}
                 </div>
-                <h3 class="font-heading font-bold text-white text-base truncate hover:text-nodeEmerald transition">
-                  <a href="${job.url}" target="_blank" class="hover:underline flex items-center gap-1.5">
+                <h3 class="font-heading font-semibold text-white text-sm truncate hover:text-nodeEmerald transition">
+                  <a href="${job.url}" target="_blank" rel="noopener noreferrer" class="hover:underline flex items-center gap-1.5">
                     <span>${job.title}</span>
-                    <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                   </a>
                 </h3>
               </div>
 
-              <!-- Price Badges -->
-              <div class="flex items-center gap-3 sm:flex-shrink-0">
+              <!-- Price & Budget -->
+              <div class="flex items-center gap-3 sm:flex-shrink-0 bg-obsidian/70 px-3 py-1.5 rounded border border-borderSubtle">
                 <div class="text-right">
-                  <div class="text-[10px] font-mono text-slate-500">CLIENT BUDGET</div>
-                  <div class="text-xs font-mono font-bold text-slate-300">${budgetDisplay}</div>
+                  <div class="text-[9px] font-mono text-slate-500 uppercase">BUDGET</div>
+                  <div class="text-[11px] font-mono text-slate-300 font-semibold">${budgetDisplay}</div>
                 </div>
                 <div class="text-right pl-3 border-l border-borderSubtle">
-                  <div class="text-[10px] font-mono text-nodeEmerald font-semibold">BID SENT</div>
-                  <div class="text-sm font-mono font-bold text-nodeEmerald">${usdAmount} <span class="text-xs text-slate-400 font-normal">${nativeAmount}</span></div>
+                  <div class="text-[9px] font-mono text-nodeEmerald font-semibold uppercase">BID SENT</div>
+                  <div class="text-xs font-mono font-bold text-nodeEmerald">${usdAmount} <span class="text-[10px] text-slate-400 font-normal">${nativeAmount}</span></div>
                 </div>
               </div>
             </div>
 
-            <!-- Matched Tags & Toggle Proposal -->
-            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-borderSubtle">
-              <div class="flex flex-wrap gap-1.5">
-                ${(job.matched_keywords || []).map(k => `<span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-obsidian text-slate-300 border border-borderSubtle">#${k}</span>`).join('')}
-              </div>
-
-              <button onclick="toggleProposalAccordion('applied-prop-${idx}')" class="text-xs font-mono text-nodeCyan hover:text-cyan-300 flex items-center gap-1 cursor-pointer">
-                <span>View Submitted Proposal</span>
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-              </button>
+            <!-- Kiwix-Dense Proposal Snippet (Directly visible without accordion) -->
+            <div class="text-[11px] font-mono text-slate-300 bg-obsidian/60 p-2.5 rounded border border-borderSubtle leading-relaxed line-clamp-3 hover:line-clamp-none transition-all cursor-pointer" title="Click to view full proposal text">
+              <span class="text-nodeCyan font-semibold select-none">[Proposal] </span>${escapeHtml(proposalPreview)}
             </div>
 
-            <!-- Expandable Proposal Accordion -->
-            <div id="applied-prop-${idx}" class="hidden pt-3 border-t border-borderSubtle text-xs font-mono text-slate-300 bg-obsidian/60 p-3 rounded-xl border border-borderSubtle whitespace-pre-wrap leading-relaxed select-text">
-${job.proposal || 'Proposal details stored on server.'}
+            <!-- Matched Tags -->
+            <div class="flex flex-wrap gap-1 pt-1">
+              ${(job.matched_keywords || []).map(k => `<span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-obsidian text-slate-400 border border-borderSubtle">#${k}</span>`).join('')}
             </div>
           </div>
         `;
       }).join('');
     }
 
-    function toggleProposalAccordion(id) {
-      triggerHaptic('light');
-      const el = document.getElementById(id);
-      if (el) el.classList.toggle('hidden');
-    }
-
-    // Render Sub-Tab B: Needs Confirmation Cards
+    // Render Sub-Tab B: Needs Confirmation Cards (Kiwix Data-Dense)
     function renderConfirmationTab(jobs) {
       const container = document.getElementById('confirmation-jobs-container');
+      const headerBadge = document.getElementById('confirmation-header-badge');
+      const declineBtn = document.getElementById('btn-decline-all-pending');
+      const declineLabel = document.getElementById('decline-all-btn-label');
+
+      const count = (jobs || []).length;
+      if (headerBadge) headerBadge.textContent = count;
+      if (declineLabel) declineLabel.textContent = `Decline All (Clear ${count})`;
+      if (declineBtn) {
+        if (count === 0) {
+          declineBtn.disabled = true;
+          declineBtn.classList.add('opacity-40', 'cursor-not-allowed');
+        } else {
+          declineBtn.disabled = false;
+          declineBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+        }
+      }
+
+      if (!container) return;
+
       if (!jobs || jobs.length === 0) {
         container.innerHTML = `
-          <div class="bg-surface border border-borderSubtle rounded-2xl p-10 text-center">
-            <div class="w-12 h-12 rounded-xl bg-nodeEmerald/10 text-nodeEmerald mx-auto flex items-center justify-center mb-3">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          <div class="bg-surface border border-borderSubtle rounded-lg p-6 text-center">
+            <div class="w-10 h-10 rounded-lg bg-nodeEmerald/10 text-nodeEmerald mx-auto flex items-center justify-center mb-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             </div>
-            <h3 class="font-heading font-bold text-white text-base">All clear! 0 jobs awaiting confirmation</h3>
-            <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">High-value projects (> $65 USD) or complex hardware briefs requiring your approval will appear here with an interactive proposal customizer.</p>
+            <h3 class="font-heading font-bold text-white text-sm">All clear! 0 jobs awaiting confirmation</h3>
+            <p class="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">High-value projects (> $250 USD) or complex hardware briefs requiring your approval will appear here with an interactive proposal customizer.</p>
           </div>
         `;
         return;
@@ -1564,64 +1515,67 @@ ${job.proposal || 'Proposal details stored on server.'}
         const pauseReason = job.pause_reason || `High Budget: $${job.min_budget_usd || 100} USD`;
         const budgetUsd = job.usd_display || `$${job.min_budget_usd || 0} - $${job.max_budget_usd || 0} USD`;
         const budgetNative = job.native_display || `${job.currency_sign || '$'}${job.min_budget} ${job.currency || 'USD'}`;
-        const defaultBidUsd = Math.max(35, Math.min(60, Math.round((job.min_budget_usd || 45) * 0.9)));
+        const minU = job.min_budget_usd || 35;
+        const maxU = job.max_budget_usd || minU;
+        const defaultBidUsd = Math.round(minU + ((maxU - minU) * 0.2));
+        const defaultPeriod = defaultBidUsd < 50 ? 3 : (defaultBidUsd <= 150 ? 5 : 7);
 
         return `
-          <div id="confirm-card-${job.project_id}" class="bg-surface border border-borderSubtle hover:border-nodeAmber/40 rounded-2xl p-5 shadow-card transition space-y-4">
+          <div id="confirm-card-${job.project_id}" class="bg-surface border border-borderSubtle hover:border-nodeAmber/40 rounded-lg p-3 sm:p-3.5 shadow-sm transition space-y-2.5">
             <!-- Header -->
-            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-              <div class="space-y-1">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+              <div class="space-y-1 min-w-0 flex-1">
                 <div class="flex items-center gap-2">
-                  <span class="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-nodeAmber/20 text-nodeAmber border border-nodeAmber/40">
-                    ⚠️ ${pauseReason}
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-nodeAmber/20 text-nodeAmber border border-nodeAmber/40">
+                    [PAUSED: ${pauseReason}]
                   </span>
-                  <span class="text-[11px] font-mono text-slate-400">Project #${job.project_id}</span>
+                  <span class="text-[11px] font-mono text-slate-400">#${job.project_id}</span>
                 </div>
-                <h3 class="font-heading font-bold text-white text-lg">
-                  <a href="${job.url}" target="_blank" class="hover:text-nodeEmerald hover:underline flex items-center gap-1.5">
+                <h3 class="font-heading font-semibold text-white text-sm">
+                  <a href="${job.url}" target="_blank" rel="noopener noreferrer" class="hover:text-nodeEmerald hover:underline flex items-center gap-1.5">
                     <span>${job.title}</span>
-                    <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                    <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                   </a>
                 </h3>
               </div>
 
               <!-- Converted USD Price Badge -->
-              <div class="bg-obsidian border border-borderSubtle rounded-xl p-3 text-right flex-shrink-0">
-                <div class="text-[10px] font-mono text-slate-500 uppercase">CLIENT BUDGET</div>
-                <div class="text-base font-bold font-mono text-nodeAmber">${budgetUsd}</div>
-                <div class="text-[11px] font-mono text-slate-400">${budgetNative}</div>
+              <div class="bg-obsidian border border-borderSubtle rounded px-2.5 py-1.5 text-right flex-shrink-0">
+                <div class="text-[9px] font-mono text-slate-500 uppercase">CLIENT BUDGET</div>
+                <div class="text-xs font-bold font-mono text-nodeAmber">${budgetUsd}</div>
+                <div class="text-[10px] font-mono text-slate-400">${budgetNative}</div>
               </div>
             </div>
 
-            <!-- Job Description -->
-            <div class="text-xs text-slate-300 leading-relaxed bg-obsidian/40 p-3 rounded-xl border border-borderSubtle">
+            <!-- Job Description Snippet -->
+            <div class="text-[11px] text-slate-300 leading-relaxed bg-obsidian/40 p-2.5 rounded border border-borderSubtle line-clamp-3 hover:line-clamp-none transition-all cursor-pointer" title="Click to view full description">
               ${job.description}
             </div>
 
             <!-- Matched Tags -->
-            <div class="flex flex-wrap gap-1.5">
-              ${(job.matched_keywords || []).map(k => `<span class="px-2 py-0.5 rounded-md text-[10px] font-mono bg-obsidian text-nodeCyan border border-nodeCyan/30">#${k}</span>`).join('')}
+            <div class="flex flex-wrap gap-1">
+              ${(job.matched_keywords || []).map(k => `<span class="px-1.5 py-0.2 rounded text-[10px] font-mono bg-obsidian text-nodeCyan border border-nodeCyan/30">#${k}</span>`).join('')}
             </div>
 
-            <!-- Interactive Bid Form -->
-            <div class="pt-3 border-t border-borderSubtle space-y-3 bg-surfaceCard/60 p-4 rounded-xl border border-borderSubtle">
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <!-- Kiwix-Dense Interactive Bid Form -->
+            <div class="pt-2 border-t border-borderSubtle space-y-2 bg-surfaceCard/50 p-2.5 rounded border border-borderSubtle">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <!-- Bid Amount USD -->
                 <div>
-                  <label class="text-[11px] font-mono text-slate-400 font-semibold block mb-1">Your Bid ($ USD)</label>
-                  <input type="number" id="bid-amount-${job.project_id}" value="${defaultBidUsd}" class="w-full py-2 px-3 rounded-xl bg-obsidian border border-borderSubtle text-sm font-mono font-bold text-white focus:border-nodeEmerald outline-none" />
+                  <label class="text-[10px] font-mono text-slate-400 font-semibold block mb-0.5">Bid ($ USD)</label>
+                  <input type="number" id="bid-amount-${job.project_id}" value="${defaultBidUsd}" class="w-full py-1.5 px-2.5 rounded bg-obsidian border border-borderSubtle text-xs font-mono font-bold text-white focus:border-nodeEmerald outline-none" />
                 </div>
 
                 <!-- Delivery Period -->
                 <div>
-                  <label class="text-[11px] font-mono text-slate-400 font-semibold block mb-1">Period (Days)</label>
-                  <input type="number" id="bid-period-${job.project_id}" value="4" class="w-full py-2 px-3 rounded-xl bg-obsidian border border-borderSubtle text-sm font-mono font-bold text-white focus:border-nodeEmerald outline-none" />
+                  <label class="text-[10px] font-mono text-slate-400 font-semibold block mb-0.5">Period (Days)</label>
+                  <input type="number" id="bid-period-${job.project_id}" value="${defaultPeriod}" class="w-full py-1.5 px-2.5 rounded bg-obsidian border border-borderSubtle text-xs font-mono font-bold text-white focus:border-nodeEmerald outline-none" />
                 </div>
 
                 <!-- Template Selector -->
                 <div>
-                  <label class="text-[11px] font-mono text-slate-400 font-semibold block mb-1">Proposal Tone</label>
-                  <select onchange="updateDraftProposal(${job.project_id}, this.value)" class="w-full py-2 px-3 rounded-xl bg-obsidian border border-borderSubtle text-xs font-mono text-slate-200 focus:border-nodeEmerald outline-none cursor-pointer">
+                  <label class="text-[10px] font-mono text-slate-400 font-semibold block mb-0.5">Proposal Tone</label>
+                  <select onchange="updateDraftProposal(${job.project_id}, this.value)" class="w-full py-1.5 px-2.5 rounded bg-obsidian border border-borderSubtle text-[11px] font-mono text-slate-200 focus:border-nodeEmerald outline-none cursor-pointer">
                     <option value="both">Full Stack: PCB + 3D Enclosure</option>
                     <option value="pcb">KiCad PCB Layout Only</option>
                     <option value="case">3D Print Enclosure Only</option>
@@ -1630,19 +1584,19 @@ ${job.proposal || 'Proposal details stored on server.'}
                 </div>
               </div>
 
-              <!-- Live Proposal Textarea -->
+              <!-- Editable Proposal Preview (Directly visible) -->
               <div>
-                <label class="text-[11px] font-mono text-slate-400 font-semibold block mb-1">Generated 3-Paragraph Proposal (Editable)</label>
-                <textarea id="bid-proposal-${job.project_id}" rows="5" class="w-full p-3 rounded-xl bg-obsidian border border-borderSubtle text-xs font-mono text-slate-200 focus:border-nodeEmerald outline-none leading-relaxed select-text">${job.proposal || ''}</textarea>
+                <label class="text-[10px] font-mono text-slate-400 font-semibold block mb-0.5">Tailored Proposal</label>
+                <textarea id="bid-proposal-${job.project_id}" rows="3" class="w-full p-2 rounded bg-obsidian border border-borderSubtle text-[11px] font-mono text-slate-200 focus:border-nodeEmerald outline-none leading-relaxed">${job.proposal || ''}</textarea>
               </div>
 
-              <!-- Action Buttons -->
-              <div class="flex items-center justify-end gap-3 pt-2">
-                <button onclick="dismissJobLead(${job.project_id})" class="px-4 py-2 rounded-xl bg-obsidian hover:bg-nodeRose/10 text-slate-400 hover:text-nodeRose border border-borderSubtle hover:border-nodeRose/30 text-xs font-heading font-semibold transition cursor-pointer">
+              <!-- Actions: Approve Bid & Dismiss -->
+              <div class="flex items-center justify-end gap-2 pt-1">
+                <button onclick="dismissJobLead(${job.project_id})" class="px-3 py-1.5 rounded bg-surfaceHover hover:bg-nodeRose/20 border border-borderSubtle hover:border-nodeRose/40 text-[11px] font-mono text-slate-300 hover:text-nodeRose transition cursor-pointer active:scale-95">
                   Dismiss
                 </button>
-                <button onclick="approveAndSendBid(${job.project_id})" id="approve-btn-${job.project_id}" class="px-5 py-2.5 rounded-xl bg-nodeEmerald hover:bg-emerald-400 text-obsidian font-heading font-bold text-xs tracking-wide shadow-glowEmerald transition cursor-pointer active:scale-95 flex items-center gap-1.5">
-                  <span>Approve & Place Bid 🚀</span>
+                <button onclick="approveAndSendBid(${job.project_id})" id="approve-btn-${job.project_id}" class="px-4 py-1.5 rounded bg-nodeEmerald hover:bg-emerald-400 text-obsidian text-[11px] font-heading font-bold flex items-center gap-1.5 transition cursor-pointer active:scale-95 shadow-sm">
+                  <span>Approve &amp; Bid &rarr;</span>
                 </button>
               </div>
             </div>
@@ -1724,17 +1678,19 @@ ${job.proposal || 'Proposal details stored on server.'}
           const confBadge = document.getElementById('tab-count-confirmation');
           const sideBadge = document.getElementById('sidebar-confirm-badge');
           const mobBadge = document.getElementById('mobile-confirm-badge');
+          const headBadge = document.getElementById('confirmation-header-badge');
+          const decLabel = document.getElementById('decline-all-btn-label');
           if (confBadge) {
             const newCount = Math.max(0, (parseInt(confBadge.textContent) || 1) - 1);
             confBadge.textContent = newCount;
+            if (headBadge) headBadge.textContent = newCount;
+            if (decLabel) decLabel.textContent = `Decline All (Clear ${newCount})`;
             if (newCount > 0) {
-              sideBadge.textContent = newCount;
-              sideBadge.classList.remove('hidden');
-              mobBadge.textContent = newCount;
-              mobBadge.classList.remove('hidden');
+              if (sideBadge) { sideBadge.textContent = newCount; sideBadge.classList.remove('hidden'); }
+              if (mobBadge) { mobBadge.textContent = newCount; mobBadge.classList.remove('hidden'); }
             } else {
-              sideBadge.classList.add('hidden');
-              mobBadge.classList.add('hidden');
+              if (sideBadge) sideBadge.classList.add('hidden');
+              if (mobBadge) mobBadge.classList.add('hidden');
             }
           }
           setTimeout(() => fetchState(false), 800);
@@ -1749,6 +1705,60 @@ ${job.proposal || 'Proposal details stored on server.'}
         alert(`Network error: ${e.message}`);
         btn.disabled = false;
         btn.innerHTML = `<span>Approve & Place Bid 🚀</span>`;
+      }
+    }
+
+    // Decline / Clear All Pending Confirmation Leads
+    async function declineAllPendingJobs() {
+      triggerHaptic('medium');
+      const container = document.getElementById('confirmation-jobs-container');
+      const headerBadge = document.getElementById('confirmation-header-badge');
+      const tabBadge = document.getElementById('tab-count-confirmation');
+      const mobBadge = document.getElementById('mobile-confirm-badge');
+      const sideBadge = document.getElementById('sidebar-confirm-badge');
+      const declineBtn = document.getElementById('btn-decline-all-pending');
+      const declineLabel = document.getElementById('decline-all-btn-label');
+
+      // Instant DOM Clearance
+      if (container) {
+        container.innerHTML = `
+          <div class="bg-surface border border-borderSubtle rounded-lg p-6 text-center">
+            <div class="w-10 h-10 rounded-lg bg-nodeEmerald/10 text-nodeEmerald mx-auto flex items-center justify-center mb-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <h3 class="font-heading font-bold text-white text-sm">All clear! 0 jobs awaiting confirmation</h3>
+            <p class="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">Pending jobs were dismissed. New matching leads will appear here.</p>
+          </div>
+        `;
+      }
+
+      if (headerBadge) headerBadge.textContent = '0';
+      if (tabBadge) tabBadge.textContent = '0';
+      if (mobBadge) mobBadge.classList.add('hidden');
+      if (sideBadge) sideBadge.classList.add('hidden');
+      if (declineLabel) declineLabel.textContent = 'Decline All (Clear 0)';
+      if (declineBtn) {
+        declineBtn.disabled = true;
+        declineBtn.classList.add('opacity-40', 'cursor-not-allowed');
+      }
+
+      // Update in-memory state
+      RenderCache.confirmationJobs = [];
+      if (AppState.stateData && AppState.stateData.needs_confirmation) {
+        AppState.stateData.needs_confirmation = [];
+      }
+
+      try {
+        const resp = await fetch('/api/jobs/clear-pending', {
+          method: 'POST',
+          headers: getApiHeaders(),
+          body: JSON.stringify({ action: 'clear_all' }),
+        });
+        if (resp.ok) {
+          console.log('[CLEAR-PENDING] Server confirmed pending jobs cleared');
+        }
+      } catch (err) {
+        console.warn('[CLEAR-PENDING] Error calling /api/jobs/clear-pending:', err);
       }
     }
 

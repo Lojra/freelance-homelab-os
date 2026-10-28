@@ -1,5 +1,5 @@
-// Homelab OS Service Worker
-const CACHE_NAME = 'homelab-os-v1';
+// Homelab OS Service Worker - v2
+const CACHE_NAME = 'homelab-os-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -32,11 +32,15 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Never cache API requests - always network-first
-  if (url.pathname.startsWith('/api/')) {
+  // STRICT NETWORK-ONLY: Never cache or intercept API endpoints or Cloudflare tunnel calls
+  if (
+    url.pathname.startsWith('/api') ||
+    url.hostname.includes('trycloudflare.com') ||
+    url.hostname.includes('freelancer.com')
+  ) {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return new Response(JSON.stringify({ error: 'Node API Unreachable', offline: true }), {
+      fetch(event.request).catch((err) => {
+        return new Response(JSON.stringify({ error: 'Network request failed', details: String(err), offline: true }), {
           headers: { 'Content-Type': 'application/json' },
           status: 503
         });
@@ -45,7 +49,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for static shell assets
+  // Stale-while-revalidate for static shell assets only
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
